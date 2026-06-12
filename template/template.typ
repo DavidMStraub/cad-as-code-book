@@ -24,19 +24,19 @@
 // Page layout
 #set page(
   paper: "[-options.paper-]",
-  margin: (top: 2.5cm, bottom: 3cm, inside: 2.8cm, outside: 2.2cm),
+  margin: (top: 2.5cm, bottom: 3cm, inside: 2.5cm, outside: 2.5cm),
   binding: left,
   header: context {
     let page-num = counter(page).get().first()
-    if page-num > 2 [
-      #set text(size: 0.78em, fill: luma(120))
+    [
+      #set text(size: 0.78em, fill: luma(60))
       #if calc.odd(page-num) [
         #h(1fr) #smallcaps[[-options.book_title-]] #h(6pt) #page-num
       ] else [
         #page-num #h(6pt) #smallcaps[[# for author in doc.authors #][# if loop.first #][-author.name-][# endif #][# endfor #]] #h(1fr)
       ]
       #v(-4pt)
-      #line(length: 100%, stroke: 0.3pt + luma(180))
+      #line(length: 100%, stroke: 0.3pt + luma(100))
     ]
   },
   footer: [],
@@ -140,37 +140,60 @@
 
 // Title page
 #page(
-  margin: (top: 4cm, bottom: 3cm, left: 3.5cm, right: 3.5cm),
+  margin: (top: 3cm, bottom: 3cm, left: 3.5cm, right: 3.5cm),
   header: [],
   footer: [],
 )[
-  #v(2fr)
-  #align(center)[
-    #text(font: sans-font, size: 3em, weight: "black", fill: accent)[[-options.book_title-]]
-    #v(0.4cm)
-    [# if options.book_subtitle #]
-    #text(font: sans-font, size: 1.5em, fill: luma(60))[[-options.book_subtitle-]]
-    #v(1.2cm)
-    [# endif #]
-    #line(length: 40%, stroke: 1.5pt + accent)
-    #v(1.2cm)
-    #text(font: sans-font, size: 1.2em)[
-      [# for author in doc.authors #][-author.name-][# if not loop.last #], [# endif #][# endfor #]
-    ]
-    [# if options.edition #]
-    #v(0.3cm)
-    #text(font: sans-font, size: 0.9em, fill: luma(100))[[-options.edition-]]
-    [# endif #]
-  ]
   #v(3fr)
-  #align(center)[
-    #text(size: 0.82em, fill: luma(120))[
-      [# if options.publisher #][-options.publisher-] · [# endif #][-options.year-] \
-      [# if options.isbn #]ISBN [-options.isbn-] \ [# endif #]
-      [# if doc.doi #]DOI [-doc.doi-] \ [# endif #]
-      [# if options.urn #]URN [-options.urn-][# endif #]
-    ]
+  #text(font: sans-font, size: 3em, weight: "black", fill: accent)[[-options.book_title-]]
+  #v(0.5cm)
+  [# if options.book_subtitle #]
+  #text(font: sans-font, size: 1.4em, fill: luma(60))[[-options.book_subtitle-]]
+  #v(0.8cm)
+  [# endif #]
+  #line(length: 100%, stroke: 1pt + accent)
+  #v(0.8cm)
+  #text(font: sans-font, size: 1.1em)[
+    [# for author in doc.authors #][-author.name-][# if not loop.last #] · [# endif #][# endfor #]
   ]
+  [# if options.edition #]
+  #v(0.4cm)
+  #text(font: sans-font, size: 0.9em, fill: luma(120))[[-options.edition-]]
+  [# endif #]
+  #v(1fr)
+]
+
+// Copyright / imprint page
+#page(
+  margin: (top: 3cm, bottom: 3cm, left: 3.5cm, right: 3.5cm),
+  header: [],
+  footer: [],
+)[
+  #v(1fr)
+  #set text(size: 0.85em, fill: luma(50))
+  Copyright © [-options.year-] [# for author in doc.authors #][# if loop.first #][-author.name-][# endif #][# endfor #]
+
+  #v(0.8em)
+  #image("cc-by.svg", height: 2.5em)
+  #v(0.4em)
+  [-options.book_license-]
+
+  #v(1.5em)
+  [# if options.publisher #]
+  Published by [-options.publisher-] \
+  [# endif #]
+  [# if options.edition #]
+  [-options.edition-] edition \
+  [# endif #]
+  [# if options.isbn #]
+  ISBN [-options.isbn-] \
+  [# endif #]
+  [# if doc.doi #]
+  DOI [-doc.doi-] \
+  [# endif #]
+  [# if options.urn #]
+  URN [-options.urn-]
+  [# endif #]
 ]
 
 // Table of contents

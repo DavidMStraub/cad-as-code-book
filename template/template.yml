@@ -9,6 +9,7 @@ kind: typst
 template: template.typ
 files:
   - template.typ
+  - cc-by.svg
 
 doc:
   - id: title
@@ -59,3 +60,10 @@ options:
     type: string
     default: ""
     description: URN (e.g. urn:isbn:...)
+  - id: book_license
+    type: string
+    default: >
+      This work is licensed under a Creative Commons Attribution 4.0
+      International License. To view a copy of this license, visit
+      https://creativecommons.org/licenses/by/4.0/.
+    description: License statement
