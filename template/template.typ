@@ -10,13 +10,13 @@
 #let border-warn = rgb("#f97316")
 #let border-tip  = rgb("#22c55e")
 #let border-aside= rgb("#8b5cf6")
-#let code-bg     = rgb("#f5f5f5")
+#let code-bg     = rgb("#fafafa")
 #let code-fg     = rgb("#1e1e2e")
 
 // Fonts
 #let body-font = ("Linux Libertine O",)
 #let mono-font = ("Fira Code", "IBM Plex Mono")
-#let sans-font = ("Source Sans 3", "IBM Plex Sans", "Linux Biolinum O")
+#let sans-font = ("IBM Plex Sans", "Linux Biolinum O")
 
 // Document metadata
 #set document(title: "[-options.book_title-]")
@@ -29,12 +29,17 @@
   header: context {
     let page-num = counter(page).get().first()
     [
-      #set text(size: 0.78em, fill: luma(60))
+      #set text(size: 0.85em, fill: luma(60))
       #if calc.odd(page-num) [
         #h(1fr) #smallcaps[[-options.book_title-]] #h(6pt) #page-num
-      ] else [
-        #page-num #h(6pt) #smallcaps[[# for author in doc.authors #][# if loop.first #][-author.name-][# endif #][# endfor #]] #h(1fr)
-      ]
+      ] else {
+        let chapters = query(heading.where(level: 1).before(here()))
+        let chapter-title = if chapters.len() > 0 { chapters.last().body } else []
+        counter(page).display()
+        h(6pt)
+        smallcaps(chapter-title)
+        h(1fr)
+      }
       #v(-4pt)
       #line(length: 100%, stroke: 0.3pt + luma(100))
     ]
@@ -85,13 +90,13 @@
   pagebreak(weak: true)
   v(2cm)
   if it.numbering != none {
-    text(font: sans-font, size: 1em, fill: accent, weight: "bold", {
+    text(font: sans-font, size: 1em, fill: accent, weight: 450, {
       "CHAPTER "
       counter(heading).display("1")
     })
     v(4pt)
   }
-  text(font: sans-font, size: 2.2em, weight: "bold", it.body)
+  text(font: sans-font, size: 2.0em, weight: "semibold", it.body)
   v(0.4cm)
   line(length: 100%, stroke: 0.5pt + accent)
   v(0.6cm)
@@ -100,14 +105,18 @@
 #show heading.where(level: 2): it => {
   set par(first-line-indent: 0em)
   v(1.4em)
-  text(font: sans-font, size: 1.5em, weight: "semibold", fill: accent, it.body)
+  text(font: sans-font, size: 1.5em, weight: "semibold", fill: accent, {
+    counter(heading).display("1.1")
+    h(0.5em)
+    it.body
+  })
   v(0.3em)
 }
 
 #show heading.where(level: 3): it => {
   set par(first-line-indent: 0em)
   v(1em)
-  text(font: sans-font, size: 1.2em, weight: "regular", it.body)
+  text(font: sans-font, size: 1.2em, weight: "medium", fill: accent, it.body)
   v(0.2em)
 }
 
@@ -127,10 +136,9 @@
   inset: 14pt,
   text(font: mono-font, size: 0.82em, fill: code-fg, it),
 )
-#show raw.where(block: false): it => highlight(
+#show raw.where(block: false): it => box(
   fill: rgb("#ebebf0"),
-  top-edge: 0.7em,
-  bottom-edge: -0.2em,
+  inset: (x: 1pt, y: 2pt),
   radius: 2pt,
   text(font: mono-font, size: 0.87em, fill: code-fg, it),
 )
@@ -145,7 +153,7 @@
   footer: [],
 )[
   #v(3fr)
-  #text(font: sans-font, size: 3em, weight: "black", fill: accent)[[-options.book_title-]]
+  #text(font: sans-font, size: 3em, weight: "bold", fill: accent)[[-options.book_title-]]
   #v(0.5cm)
   [# if options.book_subtitle #]
   #text(font: sans-font, size: 1.4em, fill: luma(60))[[-options.book_subtitle-]]
