@@ -16,7 +16,7 @@
 // Fonts
 #let body-font = ("Linux Libertine O",)
 #let mono-font = ("Fira Code", "IBM Plex Mono")
-#let sans-font = ("IBM Plex Sans", "Linux Biolinum O")
+#let sans-font = ("IBM Plex Sans")
 
 // Document metadata
 #set document(title: "[-options.book_title-]")
@@ -29,7 +29,7 @@
   header: context {
     let page-num = counter(page).get().first()
     [
-      #set text(size: 0.85em, fill: luma(60))
+      #set text(font: sans-font, size: 0.85em, fill: luma(60))
       #if calc.odd(page-num) [
         #h(1fr) #smallcaps[[-options.book_title-]] #h(6pt) #page-num
       ] else {
@@ -96,7 +96,7 @@
     })
     v(4pt)
   }
-  text(font: sans-font, size: 2.0em, weight: "semibold", it.body)
+  text(font: sans-font, size: 2.0em, weight: "semibold", fill: luma(30), it.body)
   v(0.4cm)
   line(length: 100%, stroke: 0.5pt + accent)
   v(0.6cm)
