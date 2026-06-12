@@ -1,0 +1,61 @@
+jtex: v1
+title: Book Template
+description: Professional textbook template
+version: 0.1.0
+license: MIT
+authors:
+  - name: David M. Straub
+kind: typst
+template: template.typ
+files:
+  - template.typ
+
+doc:
+  - id: title
+    required: true
+  - id: authors
+    required: true
+  - id: doi
+
+options:
+  - id: book_title
+    type: string
+    required: true
+    description: Book title (title page and running header)
+  - id: book_subtitle
+    type: string
+    default: ""
+    description: Book subtitle
+  - id: paper
+    type: choice
+    default: a4
+    choices: [a4, us-letter]
+    description: Paper size
+  - id: accent_color
+    type: string
+    default: "#4a6fa5"
+    description: Accent colour as a CSS hex string (e.g. "#4a6fa5")
+  - id: font_size
+    type: string
+    default: 11pt
+    description: Body font size (e.g. 11pt, 12pt)
+  - id: edition
+    type: string
+    default: ""
+    description: Edition label (e.g. "First Edition", "Draft")
+  - id: year
+    type: string
+    default: ""
+    description: Publication year
+  - id: publisher
+    type: string
+    default: ""
+    description: Publisher name
+  - id: isbn
+    type: string
+    default: ""
+    description: ISBN
+  - id: urn
+    type: string
+    default: ""
+    description: URN (e.g. urn:isbn:...)

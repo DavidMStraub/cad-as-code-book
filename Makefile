@@ -1,17 +1,14 @@
-TYPST   := typst
-MAIN    := main.typ
-OUT     := main.pdf
-SOURCES := $(MAIN) template.typ $(wildcard chapters/*.typ)
+MYST := myst
 
-.PHONY: all watch clean
+.PHONY: all build watch clean
 
-all: $(OUT)
+all: build
 
-$(OUT): $(SOURCES)
-	$(TYPST) compile $(MAIN) $(OUT)
+build:
+	$(MYST) build --typst
 
 watch:
-	$(TYPST) watch $(MAIN) $(OUT)
+	$(MYST) start
 
 clean:
-	rm -f $(OUT)
+	rm -rf _build/

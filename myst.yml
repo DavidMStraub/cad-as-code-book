@@ -1,0 +1,24 @@
+version: 1
+project:
+  title: CAD as Code
+  subtitle: Parametric Modeling and Engineering with Python
+  authors:
+    - name: David M. Straub
+  doi: 10.0000/placeholder.2026
+  exports:
+    - format: typst
+      template: ./template
+      output: main.pdf
+      options:
+        book_title: CAD as Code
+        book_subtitle: Parametric Modeling and Engineering with Python
+        paper: a4
+        accent_color: "#4a6fa5"
+        font_size: 11pt
+        edition: Draft
+        year: "2026"
+        publisher: Self-published
+        isbn: "000-0-000-00000-0"
+        urn: "urn:isbn:0000000000000"
+  toc:
+    - file: chapters/ch01-intro.md

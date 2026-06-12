@@ -1,6 +1,6 @@
-# Typst output
-*.pdf
-*.png
+# Build output
+_build/
+main.pdf
 
 # OS
 .DS_Store
