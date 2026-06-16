@@ -197,10 +197,10 @@
   ISBN [-options.isbn-] \
   [# endif #]
   [# if doc.doi #]
-  DOI [-doc.doi-] \
+  DOI #link("https://doi.org/[-doc.doi-]")[https://doi.org/[-doc.doi-]] \
   [# endif #]
   [# if options.urn #]
-  URN [-options.urn-]
+  URN #link("https://nbn-resolving.org/[-options.urn-]")[[-options.urn-]]
   [# endif #]
 ]
 

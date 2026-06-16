@@ -4,7 +4,7 @@ project:
   subtitle: Parametric Modeling and Engineering with Python
   authors:
     - name: David M. Straub
-  doi: 10.0000/placeholder.2026
+  doi: 10.60948/OPUS-1358
   exports:
     - format: typst
       template: ./template
@@ -18,7 +18,6 @@ project:
         edition: Draft
         year: "2026"
         publisher: Self-published
-        isbn: "000-0-000-00000-0"
-        urn: "urn:isbn:0000000000000"
+        urn: "urn:nbn:de:bvb:m347-opus-13585"
   toc:
     - file: chapters/ch01-intro.md
