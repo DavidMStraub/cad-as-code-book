@@ -13,11 +13,17 @@ project:
         book_title: CAD as Code
         book_subtitle: Parametric Modeling and Engineering with Python
         paper: a4
-        accent_color: "#4a6fa5"
+        accent_color: "#2C3E50"
         font_size: 11pt
         edition: Draft
         year: "2026"
         publisher: Self-published
         urn: "urn:nbn:de:bvb:m347-opus-13585"
   toc:
-    - file: chapters/ch01-intro.md
+    - file: chapters/index.md
+    - file: chapters/preface.md
+    - file: chapters/part-1.md
+    - file: chapters/ch01-case-for-cad-as-code.md
+    - file: chapters/ch02-first-parts.md
+    - file: chapters/ch03-profiles-into-solids.md
+    - file: chapters/ch04-designing-with-parameters.md

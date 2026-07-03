@@ -18,6 +18,22 @@
 #let mono-font = ("Fira Code", "IBM Plex Mono")
 #let sans-font = ("IBM Plex Sans")
 
+// Parts
+// A part divider is a level-1 heading carrying the label <part>. The heading
+// show rule renders it as a divider page; the running header and the chapter
+// counter ignore it (numbering: none does not step the heading counter).
+// Chapter files invoke this via a raw-typst block: #part[Title]
+#let part-counter = counter("part")
+#let part(title) = {
+  part-counter.step()
+  // Part headings are marked via their supplement field (attaching a label
+  // would need bracket-hash markup, which jtex misparses as a template tag).
+  heading(level: 1, numbering: none, outlined: true, supplement: [part], title)
+}
+// NB: chapter files are typst #include-s and cannot see template definitions.
+// Raw-typst blocks in markdown must therefore use built-ins only; see
+// chapters/part-1.md and chapters/preface.md for the patterns.
+
 // Document metadata
 #set document(title: "[-options.book_title-]")
 
@@ -34,6 +50,7 @@
         #h(1fr) #smallcaps[[-options.book_title-]] #h(6pt) #page-num
       ] else {
         let chapters = query(heading.where(level: 1).before(here()))
+          .filter(h => h.at("supplement", default: auto) != [part])
         let chapter-title = if chapters.len() > 0 { chapters.last().body } else []
         counter(page).display()
         h(6pt)
@@ -87,19 +104,35 @@
 #show heading: it => { set par(first-line-indent: 0em); it }
 
 #show heading.where(level: 1): it => {
-  pagebreak(weak: true)
-  v(2cm)
-  if it.numbering != none {
-    text(font: sans-font, size: 1em, fill: accent, weight: 450, {
-      "CHAPTER "
-      counter(heading).display("1")
-    })
-    v(4pt)
+  if it.at("supplement", default: auto) == [part] {
+    // Part divider page
+    pagebreak(weak: true, to: "odd")
+    page(header: none, footer: none)[
+      #v(2fr)
+      #text(font: sans-font, size: 1.2em, fill: accent, weight: 450, tracking: 3pt)[
+        PART #part-counter.display("I")
+      ]
+      #v(0.5cm)
+      #text(font: sans-font, size: 2.6em, weight: "bold", fill: luma(30), it.body)
+      #v(0.5cm)
+      #line(length: 30%, stroke: 1.5pt + accent)
+      #v(3fr)
+    ]
+  } else {
+    pagebreak(weak: true)
+    v(2cm)
+    if it.numbering != none {
+      text(font: sans-font, size: 1em, fill: accent, weight: 450, {
+        "CHAPTER "
+        counter(heading).display("1")
+      })
+      v(4pt)
+    }
+    text(font: sans-font, size: 2.0em, weight: "semibold", fill: luma(30), it.body)
+    v(0.4cm)
+    line(length: 100%, stroke: 0.5pt + accent)
+    v(0.6cm)
   }
-  text(font: sans-font, size: 2.0em, weight: "semibold", fill: luma(30), it.body)
-  v(0.4cm)
-  line(length: 100%, stroke: 0.5pt + accent)
-  v(0.6cm)
 }
 
 #show heading.where(level: 2): it => {
@@ -209,8 +242,15 @@
   #text(font: sans-font, size: 2em, weight: "bold")[Contents]
   #v(1.5em)
   #show outline.entry.where(level: 1): it => {
-    v(1em, weak: true)
-    strong(it)
+    if it.element.at("supplement", default: auto) == [part] {
+      v(1.6em, weak: true)
+      text(font: sans-font, weight: "bold", fill: accent, size: 1.05em,
+        smallcaps(it.element.body))
+      v(0.4em, weak: true)
+    } else {
+      v(1em, weak: true)
+      strong(it)
+    }
   }
   #outline(
     title: none,
@@ -220,7 +260,5 @@
 ]
 
 #counter(page).update(1)
-
-= [-doc.title-]
 
 [-CONTENT-]

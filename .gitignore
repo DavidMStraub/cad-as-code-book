@@ -2,6 +2,9 @@
 _build/
 main.pdf
 
+# Private files
+private/
+
 # OS
 .DS_Store
 Thumbs.db
