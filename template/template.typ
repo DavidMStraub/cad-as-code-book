@@ -181,6 +181,18 @@
     features: ("calt": 0, "liga": 0), it),
 )
 
+// Keep callout boxes (left-border stroke) intact across page breaks.
+// Note: an unstyled block reports an *empty* dict stroke too, so we must
+// require a non-empty dict with a "left" key, not just dict-typed.
+#let is-callout-stroke(s) = type(s) == dictionary and s.len() > 0 and "left" in s
+#show block: it => {
+  if is-callout-stroke(it.stroke) {
+    block(breakable: false, it)
+  } else {
+    it
+  }
+}
+
 // Figure captions
 #show figure.caption: it => text(size: 0.87em, style: "italic", it)
 
