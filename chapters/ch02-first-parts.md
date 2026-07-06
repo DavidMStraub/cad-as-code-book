@@ -17,12 +17,17 @@ part = plate - hole
 show(part)
 ```
 
-Two primitives, one operation. `box` takes length, width, and height and
-centers the result on the origin; `cylinder` takes a diameter and a height,
-centered the same way, its axis along the vertical. The `-` operator
-subtracts one solid from another – material is removed wherever the two
-overlap – so `part` is a plate with a hole bored straight through its
-center. Calling `show` sends the result to the viewer.
+Two primitives, one operation. `box` takes length, width, and height;
+`cylinder` takes a diameter and a height, its axis along the vertical.
+Both center themselves on the origin in x and y, but neither centers along
+its own height: each sits with its base at z = 0 and extends upward from
+there. That detail doesn't matter yet, since the plate and the hole share
+the same height and so line up exactly top and bottom – but it matters a
+great deal the moment two shapes of *different* heights are stacked, a
+case this chapter returns to. The `-` operator subtracts one solid from
+another – material is removed wherever the two overlap – so `part` is a
+plate with a hole bored straight through its center. Calling `show` sends
+the result to the viewer.
 
 Before going further, one choice deserves a sentence. CadQuery offers two
 ways of writing models: a fluent style, in which operations are chained onto
@@ -183,21 +188,20 @@ def clutch_brick(
     body = cf.box(length, width, height)
     stud = cf.cylinder(d=stud_diameter, h=stud_height)
 
-    top = height / 2 + stud_height / 2
-    left_stud = stud.translate((-stud_spacing / 2, 0, top))
-    right_stud = stud.translate((stud_spacing / 2, 0, top))
+    left_stud = stud.translate((-stud_spacing / 2, 0, height))
+    right_stud = stud.translate((stud_spacing / 2, 0, height))
 
     return body + left_stud + right_stud
 ```
 
-Both primitives are centered on their own middle by default, the brick body
-along its height as much as the stud along its own – so a stud placed at
-the body's top surface would sit half embedded in it, its other half
-floating above. Raising it by half its own height, `stud_height / 2`, on
-top of the body's half-height puts it flush on the surface instead, sitting
-on the brick rather than through it. It is a small arithmetic correction,
-and a useful one to notice once, since it recurs wherever one part is
-stacked on another.
+Both primitives sit with their base at z = 0 by default, as the plate and
+hole did earlier in this chapter – so the body's top surface is simply at
+z = `height`, and moving a stud (itself starting base-first at z = 0) up
+by exactly that much places its base flush against the body's top, with
+nothing to embed and no gap to leave. Stacking two shapes that both start
+from their own base is addition, not an extra correction – it is *not*
+centering that makes this simple, but the fact that both primitives already
+agree on which end is the bottom.
 
 ```python
 import math
