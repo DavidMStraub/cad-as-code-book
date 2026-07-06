@@ -4,11 +4,11 @@
 #let accent      = rgb("[-options.accent_color-]")
 #let bg-note     = rgb("#eff6ff")
 #let bg-warn     = rgb("#fff7ed")
-#let bg-tip      = rgb("#f0fdf4")
+#let bg-tip      = rgb("#eff6ff")
 #let bg-aside    = rgb("#f5f0ff")
 #let border-note = rgb("#3b82f6")
 #let border-warn = rgb("#f97316")
-#let border-tip  = rgb("#22c55e")
+#let border-tip  = rgb("#3b82f6")
 #let border-aside= rgb("#8b5cf6")
 #let code-bg     = rgb("#fafafa")
 #let code-fg     = rgb("#1e1e2e")
@@ -128,7 +128,7 @@
       })
       v(4pt)
     }
-    text(font: sans-font, size: 2.0em, weight: "semibold", fill: luma(30), it.body)
+    text(font: sans-font, size: 2.0em, weight: "semibold", fill: accent, it.body)
     v(0.4cm)
     line(length: 100%, stroke: 0.5pt + accent)
     v(0.6cm)
@@ -161,19 +161,24 @@
 }
 
 // Code blocks
+// Ligatures off: Fira Code fuses "->", "!=", etc. into single glyphs via
+// contextual alternates, which misrepresents the actual characters in
+// printed code — readers transcribing code should see literal "->".
 #show raw.where(block: true): it => block(
   width: 100%,
   fill: code-bg,
   stroke: 0.5pt + rgb("#d0d0d8"),
   radius: 6pt,
   inset: 14pt,
-  text(font: mono-font, size: 0.82em, fill: code-fg, it),
+  text(font: mono-font, size: 0.82em, fill: code-fg, ligatures: false,
+    features: ("calt": 0, "liga": 0), it),
 )
 #show raw.where(block: false): it => box(
   fill: rgb("#ebebf0"),
   inset: (x: 1pt, y: 2pt),
   radius: 2pt,
-  text(font: mono-font, size: 0.87em, fill: code-fg, it),
+  text(font: mono-font, size: 0.87em, fill: code-fg, ligatures: false,
+    features: ("calt": 0, "liga": 0), it),
 )
 
 // Figure captions

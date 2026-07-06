@@ -1,38 +1,248 @@
 # First Parts
 
-% Status: skeleton, headings only. See private/book-plan.md §2 (Ch. 2).
-% B-Rep pass 2 of 3 lives here ("What Did We Just Make?").
-
-## Setting Up
-
-### A Python Environment for CAD
-
-### Seeing Your Models: Jupyter and VS Code
-
 ## A First Solid
 
-## Placing Things: Locations
+A short script is enough to see how the pieces fit together. Setting up the
+two packages it needs is a one-time matter, covered in Appendix A; nothing
+more is assumed here.
 
-## Combining Solids: Union, Cut, Intersection
+```python
+from cadquery import func as cf
+from ocp_vscode import show
 
-## What Did We Just Make?
+plate = cf.box(80, 50, 10)
+hole = cf.cylinder(d=20, h=10)
+part = plate - hole
 
-### Faces, Edges, Vertices
+show(part)
+```
 
-### The B-Rep Hierarchy in One Picture
+Two primitives, one operation. `box` takes length, width, and height and
+centers the result on the origin; `cylinder` takes a diameter and a height,
+centered the same way, its axis along the vertical. The `-` operator
+subtracts one solid from another – material is removed wherever the two
+overlap – so `part` is a plate with a hole bored straight through its
+center. Calling `show` sends the result to the viewer.
 
-## Selecting Sub-Shapes
+Before going further, one choice deserves a sentence. CadQuery offers two
+ways of writing models: a fluent style, in which operations are chained onto
+a running modeling object, and the direct style used above, in which shapes,
+faces, and locations are ordinary Python values passed explicitly between
+functions and operators. This book uses the direct style throughout. A
+boundary representation, as the previous chapter described it, is built
+from explicit things – solids, faces, edges – and code that keeps them
+explicit reads the same way the model is structured; it is also the style
+whose data can be tested (Chapter 8) and searched by an optimizer (Chapter
+12) without translation. Readers who meet the fluent style elsewhere,
+including most of CadQuery's own documentation, will recognize the same
+operations under different spelling.
 
-### String Selectors
+A hole through the exact center is a special case; most are not. Moving a
+shape before combining it is one call:
 
-### Filleting the Right Edge
+```python
+hole = cf.cylinder(d=20, h=10).translate((20, 0, 0))
+part = plate - hole
+```
+
+`translate` returns a new shape shifted by the given offset and leaves the
+original untouched – every operation in this book works this way, producing
+a result rather than changing something in place. A plain offset is all
+this chapter needs; placing a shape at an angle, or flush against a face
+that is itself tilted in space, takes a somewhat richer object, a
+**Location**, which Chapter 3 introduces alongside the rest of the spatial
+vocabulary.
+
+## What Did We Just Build?
+
+It is worth stopping to look at what `part` actually is. A shape can list
+its own sub-shapes:
+
+```python
+print(len(part.Faces()), "faces")
+print(len(part.Edges()), "edges")
+print(len(part.Vertices()), "vertices")
+```
+
+For a plate with one hole all the way through, the answer is seven faces,
+fifteen edges, ten vertices. Six faces and twelve edges belong to the plate
+itself, exactly as many as a plain box has; boring the hole adds one curved
+**face** for the hole's wall, and – because that face is closed on itself
+and needs a seam – three more **edges** and two more **vertices** than a
+hole would seem to need at first glance. None of this has to be memorized.
+It is enough to know that a **solid** is bounded by faces, faces are bounded
+by edges, and edges end at vertices, and that this structure can always be
+asked about directly rather than assumed.
+
+% Figure: the plate-with-hole solid, faces/edges/vertices called out, next
+% to the small hierarchy diagram (Solid -> Face -> Edge -> Vertex).
+
+Chapter 5 returns to this hierarchy in depth – how faces and edges are
+shared, what orientation means, why the counts come out exactly this way.
+For now, the working vocabulary above is enough to do something useful with
+it.
+
+## Selecting What You Mean
+
+Suppose the hole's edge should be rounded, top and bottom, but the plate's
+outer edges should stay sharp. The listing methods above return everything,
+without distinction; picking the right sub-shapes by counting through a
+list would break the moment a dimension changes and the count shifts.
+Alongside `Faces()` and `Edges()`, CadQuery has a second, lowercase family –
+`faces()`, `edges()` – that takes a **selector**: a short string describing
+a sub-shape by what it *is*, not by where it happens to sit in a list.
+
+```python
+top_face = part.faces(">Z")
+hole_edge = top_face.edges("%CIRCLE")
+```
+
+`">Z"` reads as "the face furthest along +Z" – the top of the plate,
+whichever position it happens to occupy internally. `"%CIRCLE"` filters for
+edges whose underlying curve is a circle, which among the top face's edges
+is exactly the rim of the hole; the plate's four straight outer edges are
+of a different kind and are excluded automatically. Called with no
+argument at all, `faces()` and `edges()` fall back to returning everything,
+exactly like their capitalized counterparts – the two families differ only
+in whether a selector is available, not in what they cover.
+
+With the right edge in hand, rounding it is one call:
+
+```python
+result = part.fillet(2.0, [hole_edge])
+show(result)
+```
+
+`fillet` takes a radius and a list of edges and returns a new solid with
+those edges rounded to that radius. A matching operation, `chamfer`,
+produces a flat angled cut instead of a curved one, when that is what a
+drawing calls for.
 
 ## Dimensions as Variables
 
-## Worked Example: A LEGO Brick
+Everything so far has used numbers written directly into the code. The
+point of building a part this way is that the numbers do not have to stay
+there:
 
-## Shipping It: A First STEP Export
+```python
+from cadquery import Shape
 
-## A Note on the API This Book Uses
 
-## Try It
+def plate_with_hole(
+    length: float, width: float, thickness: float, hole_diameter: float, hole_offset: float
+) -> Shape:
+    plate = cf.box(length, width, thickness)
+    hole = cf.cylinder(d=hole_diameter, h=thickness).translate((hole_offset, 0, 0))
+    part = plate - hole
+    hole_edge = part.faces(">Z").edges("%CIRCLE")
+    return part.fillet(2.0, [hole_edge])
+```
+
+Calling `plate_with_hole(80, 50, 10, 20, 20)` produces exactly the part
+built above; calling it with a different length produces a different plate,
+correctly, without a single line being touched by hand. The parameters
+carry names and types – `length: float`, not just `length` – and every
+function built in this book is annotated the same way from here on. Type
+hints have no effect on how the code runs; what they buy, and why they are
+worth the extra few characters, is the subject of Chapter 8.
+
+A second habit starts here alongside them: backing a model with a check.
+
+```python
+part = plate_with_hole(80, 50, 10, 20, 20)
+assert part.isValid()
+assert part.Volume() > 0
+```
+
+A two-line sanity check will not catch every mistake, but it catches the
+common ones – a hole so large it consumes the plate, an offset that pushes
+it outside the material entirely – immediately, rather than when the file
+is opened by someone else. Later chapters use a small library, `pytest`, to
+write checks like this one more conventionally, and Chapter 8 turns the
+habit into a working practice; for now, a plain `assert` says everything
+that is needed.
+
+## Worked Example: A Clutch Brick
+
+The same moves – primitives, placement, a boolean – build a small
+**clutch brick**, the stud-and-tube toy brick familiar from any box of
+interlocking building bricks. A real brick's studs sit in a regular grid,
+which is exactly the kind of repetition Chapter 4 automates; here, two studs
+are placed by hand, which is all that is needed to see how a stud is
+attached.
+
+```python
+def clutch_brick(
+    length: float,
+    width: float,
+    height: float,
+    stud_diameter: float,
+    stud_height: float,
+    stud_spacing: float,
+) -> Shape:
+    body = cf.box(length, width, height)
+    stud = cf.cylinder(d=stud_diameter, h=stud_height)
+
+    top = height / 2 + stud_height / 2
+    left_stud = stud.translate((-stud_spacing / 2, 0, top))
+    right_stud = stud.translate((stud_spacing / 2, 0, top))
+
+    return body + left_stud + right_stud
+```
+
+Both primitives are centered on their own middle by default, the brick body
+along its height as much as the stud along its own – so a stud placed at
+the body's top surface would sit half embedded in it, its other half
+floating above. Raising it by half its own height, `stud_height / 2`, on
+top of the body's half-height puts it flush on the surface instead, sitting
+on the brick rather than through it. It is a small arithmetic correction,
+and a useful one to notice once, since it recurs wherever one part is
+stacked on another.
+
+```python
+import math
+
+brick = clutch_brick(
+    length=32.0,
+    width=16.0,
+    height=9.6,
+    stud_diameter=4.8,
+    stud_height=1.7,
+    stud_spacing=16.0,
+)
+
+expected = 32.0 * 16.0 * 9.6 + 2 * math.pi * (4.8 / 2) ** 2 * 1.7
+assert abs(brick.Volume() - expected) < 0.5
+show(brick)
+```
+
+Because the studs sit on the surface rather than inside it, their volume
+simply adds to the body's, so an independent hand calculation is a direct
+check on the result – the same move as the plate's check, now with two
+features to account for instead of one.
+
+The brick is also a complete, shareable part, which Chapter 1 promised
+without showing how: a file a colleague can open without running any of
+this code.
+
+```python
+from cadquery import exporters
+
+exporters.export(brick, "brick.step")
+```
+
+The file this produces holds the same exact boundary representation the
+model computed – faces, edges, curved surfaces – not an approximation of
+it; it opens in essentially any CAD system in use today. **STEP** is the
+name of that format; Chapter 9 covers it in depth, including how to carry
+names, colors, and whole assemblies of parts along with the geometry.
+
+:::{note} Try It
+- Change `plate_with_hole`'s `hole_offset` until the hole touches the
+  plate's edge. What happens to the fillet, and why?
+- Fillet the plate's four outer vertical edges instead of the hole. Which
+  selector isolates them?
+- Give the clutch brick four studs instead of two, still placed by hand. At
+  what point does writing each one out individually stop feeling
+  reasonable? Keep the answer in mind for Chapter 4.
+:::
