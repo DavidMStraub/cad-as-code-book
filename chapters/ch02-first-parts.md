@@ -29,6 +29,18 @@ another – material is removed wherever the two overlap – so `part` is a
 plate with a hole bored straight through its center. Calling `show` sends
 the result to the viewer.
 
+% Width compensated (64% declared for an intended ~41%): a typst layout bug
+% squares the percentage for a figure this close after a chapter's opening
+% heading + first code block (confirmed isolated to this one figure only;
+% every other figure in the book renders correctly at its plain declared
+% width). Re-check this if the surrounding prose changes enough to move
+% the figure's position on the page.
+:::{figure} ../figures/generated/ch02-plate-with-hole.png
+:width: 64%
+
+The plate with a hole bored through its center.
+:::
+
 Before going further, one choice deserves a sentence. CadQuery offers two
 ways of writing models: a fluent style, in which operations are chained onto
 a running modeling object, and the direct style used above, in which shapes,
@@ -123,6 +135,12 @@ those edges rounded to that radius. A matching operation, `chamfer`,
 produces a flat angled cut instead of a curved one, when that is what a
 drawing calls for.
 
+:::{figure} ../figures/generated/ch02-plate-with-hole-filleted.png
+:width: 41%
+
+The hole's rim, filleted; the plate's outer edges stay sharp.
+:::
+
 ## Dimensions as Variables
 
 Everything so far has used numbers written directly into the code. The
@@ -207,15 +225,15 @@ agree on which end is the bottom.
 import math
 
 brick = clutch_brick(
-    length=32.0,
-    width=16.0,
+    length=15.6,
+    width=7.8,
     height=9.6,
     stud_diameter=4.8,
     stud_height=1.7,
-    stud_spacing=16.0,
+    stud_spacing=8.0,
 )
 
-expected = 32.0 * 16.0 * 9.6 + 2 * math.pi * (4.8 / 2) ** 2 * 1.7
+expected = 15.6 * 7.8 * 9.6 + 2 * math.pi * (4.8 / 2) ** 2 * 1.7
 assert abs(brick.Volume() - expected) < 0.5
 show(brick)
 ```
@@ -224,6 +242,12 @@ Because the studs sit on the surface rather than inside it, their volume
 simply adds to the body's, so an independent hand calculation is a direct
 check on the result – the same move as the plate's check, now with two
 features to account for instead of one.
+
+:::{figure} ../figures/generated/ch02-clutch-brick.png
+:width: 35%
+
+The clutch brick, two studs placed by hand.
+:::
 
 The brick is also a complete, shareable part, which Chapter 1 promised
 without showing how: a file a colleague can open without running any of

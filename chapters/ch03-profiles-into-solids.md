@@ -73,6 +73,12 @@ why prismatic cells are common wherever many of them are stacked into a
 pack, as in an electric vehicle. This housing is the shape this chapter
 builds throughout.
 
+:::{figure} ../figures/generated/ch03-housing.png
+:width: 36%
+
+The extruded housing: 27 by 148 by 91 millimeters.
+:::
+
 Nothing about this result could not have been written directly as
 `cf.box(27, 148, 91)`; extrude and a primitive box agree exactly when the
 profile is a plain rectangle and the push runs straight along its normal.
@@ -173,6 +179,12 @@ in a new form: the terminals' construction records *where they belong
 relative to the housing*, not a pair of numbers that happened to be
 correct once.
 
+:::{figure} ../figures/generated/ch03-cell-with-terminals.png
+:width: 36%
+
+The housing with both terminals placed on its top face.
+:::
+
 ## Revolve: A Profile Spun Around an Axis
 
 A profile can also become a solid by turning, rather than pushing.
@@ -249,6 +261,12 @@ swept angle; left unspecified, it defaults to a full 360 degrees, and the
 same call with an explicit smaller angle would produce a wedge instead of
 a full solid, useful for showing an interior cutaway without hiding it
 behind more material.
+
+:::{figure} ../figures/generated/ch03-18650-cell.png
+:width: 10%
+
+The revolved 18650 cell, with its narrower terminal knob at the top.
+:::
 
 ## Rotation, and Why Order Matters
 
