@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Osculating circle at a point on a curve. Adapted from the public-domain
+     Wikipedia diagram (commons: Osculating_circle.svg) to this book's
+     notation (bold C for the curve, R with a kappa subscript for the
+     radius of curvature) and color palette. -->
+<svg height="360" width="480" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <marker id="mDot" markerWidth="8" markerHeight="8" refX="5" refY="5">
+            <circle style="fill:#2C3E50" cx="5" cy="5" r="2"/>
+        </marker>
+		<marker id="mTip" style="overflow:visible" orient="auto">
+			<path style="stroke:#F97316;fill:#F97316" d="M5,-2 L5,2 L0,0 z"/>
+		</marker>
+    </defs>
+	<style type="text/css">
+		<![CDATA[
+			.stroke{stroke-width:1.5px;fill:none;stroke-linecap:round}
+			.black{stroke:#1E1E2E}
+			.orange{stroke:#F97316}
+			.accent{stroke:#2C3E50}
+            .arrow{marker-start:url(#mTip);marker-end:url(#mDot)}
+            .textMath{fill:#1E1E2E;font-family:Georgia,serif;font-style:italic;font-size:22px;text-anchor:middle;text-align:center}
+            .textMathSmall{fill:#1E1E2E;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle;text-align:center}
+		]]>
+	</style>
+	<g class="stroke">
+        <g class="accent">
+			<path d="M128.57864376,160 L270,301.42135624"/>
+            <path d="M209.8959236,220.1040764 L220.50252532,230.71067812 L209.8959236,241.31727984"/>
+			<circle cx="270" cy="160" r="100"/>
+		</g>
+        <path class="black" d="M10,40 C 200,-30 170,60 170,160 A 100,100 0 0,0 270,260 C 330,260 380,240 470,350"/>
+        <path class="orange arrow" d="M270,160 L199.28932188,230.71067812"/>
+    </g>
+    <g class="textMath">
+        <text y="20" x="160" font-weight="bold">C</text>
+        <text y="255" x="185" font-weight="bold">P</text>
+        <text y="190" x="222">R</text>
+    </g>
+    <g class="textMathSmall">
+        <text y="196" x="235">&#954;</text>
+    </g>
+</svg>
