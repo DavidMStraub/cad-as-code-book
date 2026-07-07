@@ -57,8 +57,6 @@ many kilometers apart they are is a geometric one. Both are true, both
 are useful, and confusing one for the other is a real category of
 mistake, one this chapter comes back to more than once.
 
-## A Concrete Body: the Cylinder
-
 A cylinder is small enough to take apart completely by hand, which makes
 it a good first specimen.
 
@@ -98,7 +96,9 @@ rim, one where it meets the bottom. The top and bottom rims are each a
 single closed circular edge, sharing one vertex apiece with the seam.
 Three edges, two vertices, nothing left unaccounted for.
 
-## The Topological Primitives
+## The B-Rep Vocabulary
+
+### The Topological Primitives
 
 Chapter 2 used four kinds of shape without formally naming the whole
 family: a solid is bounded by faces, faces by edges, edges end at
@@ -158,7 +158,7 @@ shell – an open box missing its lid – because *shell* only promises
 connectivity, never closure. Closing the sixth face back in would turn
 it into a solid; nothing about being a shell requires that.
 
-## Hierarchy, Connectivity, and Sharing
+### Hierarchy, Connectivity, and Sharing
 
 The seven types form a strict hierarchy – solid, shell, face, wire,
 edge, vertex, each level bounded by the one below it – and the single
@@ -211,7 +211,9 @@ from the same two rules this chapter has now established: one hole, one
 face; edges and vertices are shared, and a seam edge is shared with
 itself.
 
-## Orientation
+## Correctness and Its Failure Modes
+
+### Orientation
 
 A thought experiment first, no code needed to state it: take six square
 faces, sewn together into a shell along shared edges, forming a closed
@@ -251,7 +253,7 @@ this being consistent everywhere in a shape; an oriented shell is a
 solid, a shell with any of this wrong is, at best, a shape that quietly
 fails the moment something asks it to behave like one.
 
-## Validity
+### Validity
 
 That last case – geometry that looks complete but is not actually
 usable – is common enough to deserve its own check, and it is worth
@@ -284,7 +286,7 @@ fails it should never be trusted downstream, whatever `Volume()` or
 lesson Chapter 4's locating boss taught on a different feature: know
 what an operation depends on, because the library will not stop to ask.
 
-## The Topological Naming Problem
+### The Topological Naming Problem
 
 A second, quieter failure has nothing to do with whether a shape is
 valid. Suppose an edge is picked out once, found correct, and hardcoded:
@@ -372,12 +374,12 @@ implement, `filter(objectList)`, which makes writing a custom one – "the
 edge closest to this face's centroid," "the widest of the remaining
 faces" – a few lines of ordinary Python, not a special kind of code.
 
-## B-Rep as an Industry Standard: Reading a Foreign STEP File
+## Reading a Foreign STEP File
 
 Nothing in this chapter has been specific to one piece of software.
 Vertex, edge, wire, face, shell, solid – the same seven types, the same
 hierarchy, the same orientation rule – are how CATIA, SolidWorks, NX,
-FreeCAD, and this book's own library all represent a solid, whichever
+FreeCAD, and CadQuery all represent a solid, whichever
 kernel happens to sit underneath (Dassault's CGM, Siemens's Parasolid,
 or the open-source OCCT this book has been using directly). What differs
 between them is which curve and surface types each one supports, how

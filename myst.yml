@@ -27,3 +27,4 @@ project:
     - file: chapters/ch02-first-parts.md
     - file: chapters/ch03-profiles-into-solids.md
     - file: chapters/ch04-designing-with-parameters.md
+    - file: chapters/ch05-anatomy-of-a-solid.md

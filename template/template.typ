@@ -138,7 +138,7 @@
 #show heading.where(level: 2): it => {
   set par(first-line-indent: 0em)
   v(1.4em)
-  text(font: sans-font, size: 1.5em, weight: "semibold", fill: accent, {
+  text(font: sans-font, size: 1.35em, weight: "semibold", fill: accent, {
     counter(heading).display("1.1")
     h(0.5em)
     it.body
