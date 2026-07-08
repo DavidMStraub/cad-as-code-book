@@ -1,42 +1,38 @@
 # The Mathematics of Shape
 
-% Status: sections 1-4 (Curves as Parametric Functions through NURBS)
-% drafted in full; Continuity and Surfaces are headings only. See
-% private/book-plan.md §2 (Ch. 6) and §8.1 for the open depth-control
-% decision, and private/CAx-Programmierung - 03/04 Geometrie I/II.md for
-% the source lectures this chapter draws its formulas and worked
-% examples from directly. This is a math chapter: formulas carry the
-% argument, code verifies specific claims after each one rather than
-% doing the explaining itself - keep that ratio in any further drafting.
+% Status: Curves as Parametric Functions through Continuity drafted in
+% full; only Surfaces remains headings-only. See private/book-plan.md
+% §2 (Ch. 6) and §8.1 for the open depth-control decision, and
+% private/CAx-Programmierung - 03/04 Geometrie I/II.md for the source
+% lectures this chapter draws its formulas and worked examples from
+% directly. This is a math chapter: formulas carry the argument, code
+% verifies specific claims after each one rather than doing the
+% explaining itself - keep that ratio in any further drafting.
+% Every figure in the chapter is generated (figures/ch06_*.py) from
+% numbers independently verified against the real kernel (OCP/OCCT
+% directly where the func API doesn't reach, e.g. the NURBS weights
+% example) before being drawn - keep that discipline for Surfaces too.
 % Merges lectures 03+04 into one continuous argument rather than the
 % course's two-week split. Section 2's ellipse offset is deliberately
 % undersold on first appearance - the new curve type (OFFSET) is a thin,
 % cheap wrapper, not a complicated object, and the section says so
 % plainly rather than pretending otherwise. The real escalation (degree
-% 2 to degree 12, one edge to four, once expressed as NURBS) is a payoff
-% reserved for later in the chapter, once NURBS exist to measure it in -
-% see the forward pointer at the end of §2. Canonical home (per the
-% book-plan's lookup table) for curve/surface math, NURBS, and
-% continuity; must be self-contained enough for a reader who jumps in
-% here directly. Cox-de Boor recursion and knot-multiplicity mechanics are
-% compressed into a starred subsection - book readers need the
-% consequences (local control, continuity classes, why NURBS), not the
-% recursion derivation.
+% 2 to degree 12, one edge to four, once expressed as NURBS) is the
+% payoff at the end of the NURBS section, cashing in the forward
+% pointer left at the end of §2. Canonical home (per the book-plan's
+% lookup table) for curve/surface math, NURBS, and continuity; must be
+% self-contained enough for a reader who jumps in here directly.
 %
-% Structure below §4 (open, per book-plan §8.9): a standalone "##
-% Continuity" section closes the curve arc (C^k/G^k formally, the
-% practical-significance ladder deferred from §3, closing with a
-% curvature-comb visualization of a real continuity defect - the
-% theory-practice gap the lecture material never closed, book-plan §3
-% "surface-quality inspection"). Surfaces then get their OWN top-level
-% "## Surfaces" section, not a subsection of Continuity - drafted with
-% comparable rigor to the curve sections (parametric surfaces + the
-% analytic family, sweep/loft as the surface analogue of control-point
-% curves, NURBS surfaces, surface continuity), and written
+% Surfaces (open, per book-plan §8.9) is the only section left, a
+% standalone "## Surfaces" heading, not a Continuity subsection -
+% written with comparable rigor to the curve sections (parametric
+% surfaces + the analytic family, sweep/loft as the surface analogue of
+% control-point curves, NURBS surfaces, surface continuity), and
 % self-contained enough that lifting it into its own chapter later, if
 % book-plan §8.9 resolves that way, is a mechanical cut rather than a
 % rewrite. Sets up sweep/loft in Chapter 7, which cannot be taught
-% without this chapter's vocabulary.
+% without this chapter's vocabulary. Planned subsections still stand,
+% see the % comment under the "## Surfaces" heading below.
 
 ## Curves as Parametric Functions
 
@@ -438,6 +434,8 @@ only how fast the curve leaves $\mathbf{P}_0$, not which way, so the
 tangent direction there is exactly $\mathbf{P}_1 - \mathbf{P}_0$, now a
 consequence of the formula rather than a claim about it.
 
+### Piecewise Bezier Curves
+
 A Bézier curve fixes every one of the power basis's problems – each of
 its parameters is a point a designer can see and drag – but a single
 curve does not scale to an arbitrary free-form shape. The polynomial
@@ -543,7 +541,7 @@ non-decreasing sequence of parameter values that cuts $[t_0, t_{n+k}]$
 into the polynomial pieces the curve is actually built from, one $u$-span
 at a time. The basis functions $N_{i,k}(u)$ are defined by a recursion
 over degree; the general recursive step is worth having on hand once,
-later in this chapter in a starred subsection, but its first two rungs
+in its own subsection later in this chapter, but its first two rungs
 are simple enough to see directly. Degree $0$ (order $k=1$) is a bare
 step function, equal to $1$ on exactly one knot span and $0$ everywhere
 else,
@@ -644,29 +642,226 @@ at its two opposite settings.
 
 ## NURBS: Rational Curves and Exact Shape
 
-% A polynomial B-spline cannot trace an exact circle (a fresh, small,
-% verifiable demonstration here - interpolate points on a circle, show
-% the result bulges off it); a rational one (NURBS) can - weights as the
-% mechanism. Close the section with a callback to §2's ellipse and its
-% 3mm offset (same numbers, same objects, not pre-promised there -
-% just recalled here): convert both to NURBS via .toNURBS() and report
-% degree and edge count. Verified in a throwaway script: the plain
-% ellipse is 1 edge, degree 2; the offset is 4 edges, degree 12 each.
-% That is the real cost of §2's OFFSET curve, invisible from the type
-% label alone and only visible once expressed in the same currency
-% (NURBS degree) as everything else in this family.
+A B-spline generalizes Bézier the way the previous subsection made
+precise, but it still cannot do one perfectly ordinary thing: trace an
+exact circle. The reason is not a shortcoming of any particular
+construction – it is algebraic, and it holds for every polynomial
+B-spline no matter how many control points or how high the degree.
+Suppose $\mathbf{C}(t) = (x(t), y(t))$ is a polynomial curve of degree
+$p$ in $t$, and suppose it traces a circle of radius $R$ exactly, so
+that $x(t)^2 + y(t)^2 = R^2$ for every $t$, not just at a few sample
+points. The left side is itself a polynomial in $t$, of degree at most
+$2p$, and for it to equal the constant $R^2$ identically, every
+coefficient above the constant term must vanish. But the leading
+coefficient of $x(t)^2$ is the square of $x(t)$'s own leading
+coefficient – never negative, and zero only if that coefficient already
+was. The same holds for $y(t)^2$, and two non-negative numbers sum to
+zero only if both do. Working down from the top degree, every
+non-constant coefficient of both $x(t)$ and $y(t)$ is forced to zero in
+turn, leaving $\mathbf{C}(t)$ a single fixed point, not a circle at all.
+A polynomial curve can approximate a circle as closely as its degree and
+control points allow; it cannot equal one.
 
-### Cox-de Boor Recursion (starred)
+**Rational** curves escape this by dividing one polynomial by another
+rather than insisting on a single one. A **NURBS** curve – Non-Uniform
+Rational B-Spline – attaches a **weight** $h_i > 0$ to each control
+point:
 
-% Compressed; consequences over derivation. Candidate to cut further if
-% the chapter runs long.
+$$\mathbf{C}(u) = \frac{\sum_{i=0}^{n} h_i\, \mathbf{P}_i\, N_{i,k}(u)}{\sum_{i=0}^{n} h_i\, N_{i,k}(u)}.$$
 
-## Continuity, and From Curves to Surfaces
+Setting every $h_i$ to the same value leaves the denominator equal to
+$\sum_i N_{i,k}(u) = 1$ – partition of unity again – and the whole
+expression collapses back to the ordinary B-spline from the previous
+subsection: a NURBS curve generalizes a B-spline exactly the way a
+B-spline generalizes a Bézier curve, one more link in the same chain.
+The weights only do something new when they differ from each other, and
+what they can do is trace a circle exactly. Three control points,
+$\mathbf{P}_0=(1,0)$, $\mathbf{P}_1=(1,1)$, $\mathbf{P}_2=(0,1)$, and
+weights $1$, $\sqrt2/2$, $1$, on a quadratic ($k=3$) NURBS curve, give a
+quarter circle of radius $1$ – not approximately. Evaluated at every
+parameter value, that curve sits at distance exactly $1.0000000000$ from
+the origin, to the full precision the kernel underneath this book
+computes with; the identical three control points and knot vector, every
+weight set to $1$ instead, trace an ordinary polynomial B-spline that
+bulges to radius $1.0607$ at its midpoint – six percent off, and no
+placement of the control points fixes it, since the impossibility proof
+above applies regardless. The weight on the middle point alone is what
+pulls the curve back from that bulge to the exact arc.
+
+:::{figure} ../figures/generated/ch06-nurbs-circle.svg
+:width: 38%
+
+The same three control points, the same knot vector, one number
+different. The ordinary B-spline bulges visibly outside the true
+quarter circle; the NURBS curve, weight $\sqrt2/2$ on $\mathbf{P}_1$
+alone, sits exactly on it – not a closer approximation, the curve
+itself.
+:::
+
+CadQuery's own
+free-function API has no direct constructor for a weighted control-point
+curve like this one – `cf` builds circles and ellipses as analytic
+edges outright, never needing NURBS to get them exactly right in the
+first place – so this example is the one piece of geometry in the
+chapter this book verifies against the kernel directly rather than
+building through the API it otherwise teaches throughout.
+
+This is what the offset ellipse from earlier in this chapter was
+actually costing, invisibly, the whole time. Converting it to NURBS –
+the same currency as every curve in this family, so degree and pole
+count mean the same thing for all of them – reads the cost off directly:
+
+```python
+ellipse = cf.ellipse(20.0, 10.0)
+ellipse_nurbs = ellipse.toNURBS()
+print(len(ellipse_nurbs.Edges()))
+
+offset = cf.offset2D(cf.wire(ellipse), 3.0)
+offset_nurbs = offset.toNURBS()
+print(len(offset_nurbs.Edges()))
+```
+
+One edge for the ellipse, four for the offset – `toNURBS` is as far as
+the public API goes; the degree behind each of those edges takes the
+same direct look at the kernel the quarter-circle above already needed.
+Read that way, the ellipse costs degree $2$ – exactly what a conic
+should cost, matching the exact quarter-circle above – and the offset,
+the curve that looked back when it was first computed like nothing more
+than a cheap wrapper around the original, costs degree $12$ on every one
+of its four edges. Nothing about that number was visible from the
+`OFFSET` type label alone; it only shows up once the curve is forced
+into the one representation general enough to measure every curve in
+this chapter on the same scale.
+
+### Cox-de Boor Recursion
+
+The step from $N_{i,0}$ and $N_{i,1}$, both given explicitly earlier, to
+the cubic basis functions this chapter has been plotting and using ever
+since is one formula, applied repeatedly:
+
+$$N_{i,k}(u) = \frac{u - t_i}{t_{i+k-1} - t_i}\, N_{i,k-1}(u) \;+\; \frac{t_{i+k} - u}{t_{i+k} - t_{i+1}}\, N_{i+1,k-1}(u).$$
+
+Each order-$k$ basis function is a weighted blend of two order-$(k-1)$
+neighbors, the weights sliding linearly from $0$ to $1$ across the
+interval each half spans – a direct generalization of the $N_{i,1}$
+hat, which is exactly this blend applied to two order-$0$ steps. Every
+property this chapter has used – the local support confined to $k$
+spans, the automatic $C^{k-2}$ continuity, the knot-multiplicity table –
+follows from this recursion, but reproducing that derivation adds
+machinery without adding a usable fact: this book's own basis-function
+figures, and every claim resting on them, were computed with exactly
+this formula, applied by code rather than by hand.
+
+## Continuity
 
 ### Continuity Classes: C0, C1, G1, C2, G2
 
-### Surfaces: Analytic, Swept, and NURBS
+The piecewise-Bézier algebra earlier in this chapter already built three
+of these classes by hand, one constraint at a time; naming them properly
+now just makes precise what was already done. Two curve segments
+$\mathbf{a}(u)$ and $\mathbf{b}(u)$ meeting where $\mathbf{a}(1)$ becomes
+$\mathbf{b}(0)$ are:
 
-% Close with a curvature-visualization worked example (curvature comb or
-% equivalent) showing a real continuity defect, not just naming the
-% classes - the theory-practice closer the audit flagged as missing.
+- **$C^0$**: positions agree, $\mathbf{a}(1) = \mathbf{b}(0)$, and
+  nothing else – a join with no gap, but a visible kink is completely
+  allowed. Every solid this book has built is $C^0$ at every edge it
+  has; a sharp corner is not a defect, it is what $C^0$ *is*.
+- **$C^1$**: derivatives agree as vectors, $\mathbf{a}'(1) = \mathbf{b}'(0)$
+  – matching not just tangent direction but the exact speed each segment
+  reaches the joint with, which is exactly the condition
+  $\mathbf{b}_1 = 2\mathbf{b}_0 - \mathbf{a}_2$ enforced earlier.
+- **$G^1$**: only the tangent *direction* agrees,
+  $\mathbf{a}'(1) = c\,\mathbf{b}'(0)$ for some $c > 0$ – strictly weaker
+  than $C^1$, since the two speeds are free to differ, but it is the
+  condition that actually matters visually: a curve looks smooth the
+  moment direction matches, whatever the parametrization is doing
+  underneath. A **fillet** is a $G^1$ construction by definition, not a
+  $C^1$ one – nothing about rounding a corner cares what speed an
+  arbitrary parametrization assigns it.
+- **$C^2$ / $G^2$**: second derivatives, or just curvature and its
+  osculating plane, agree the same way – exact vector match for $C^2$,
+  direction-and-magnitude-of-bend only for $G^2$. This is the join
+  matched curvature earlier in this chapter,
+  $\mathbf{b}_2 = 4\mathbf{b}_0 - 4\mathbf{a}_2 + \mathbf{a}_1$, now named.
+
+### Where Continuity Actually Matters
+
+Which of these a join actually needs depends on what happens to it
+afterward, not on some abstract standard of smoothness. A boolean
+operation neither knows nor cares whether an edge is $C^0$ or $G^2$ – a
+box's sharp corners are exactly as valid an input as a rounded one, and
+demanding curvature continuity there would be solving a problem nobody
+has. Four places where it stops being academic, for four different
+reasons:
+
+- **Manufacturing.** A milling toolpath is generated by offsetting the
+  design surface by the cutting tool's own radius – exactly the offset
+  construction from earlier in this chapter, run in three dimensions
+  instead of two – and a curvature discontinuity in the design surface
+  is a discontinuity in the tool's required contact point and
+  orientation at that instant. The result is not an aesthetic flaw but
+  a real dimensional one: a visible witness mark, or a toolpath that
+  has to retract and re-approach exactly where the surface's curvature
+  broke.
+- **Optical inspection.** Class-A automotive surfacing checks curvature
+  continuity by painting reflection lines – straight stripes of light,
+  or "zebra stripes" – across the panel and looking at how they bend in
+  the reflection. A $G^1$-only join leaves the stripe direction
+  matched, so the surface looks smooth to a bare eye, but the stripe's
+  own curvature kinks visibly at the join – the inspection exists
+  precisely because the naked eye, without the stripes, cannot see the
+  defect this chapter's curvature comb just made visible directly.
+- **Aerodynamics.** A boundary layer's pressure gradient responds to
+  how fast the surface curves, not just which way it curves, so a
+  curvature discontinuity is a local kink in that pressure gradient –
+  small geometrically, but often enough to trigger early boundary-layer
+  transition or separation that a truly curvature-continuous surface
+  would not. This is why aerodynamic and hydrodynamic surfaces are
+  specified to $G^2$ well beyond where a human eye or hand would ever
+  notice the difference.
+- **Mechanical contact.** Stress under load concentrates exactly where
+  curvature changes abruptly – a standard fact of contact mechanics,
+  the reason a sharp internal corner is a stress riser and a filleted
+  one is not. A load-bearing medical implant with a curvature
+  discontinuity on its surface has, in effect, built in a stress riser
+  at that exact point, which is why implant surfaces are held to the
+  same $G^2$ standard for structural reasons that automotive panels are
+  held to for optical ones.
+
+A curve or surface can look perfectly smooth to the eye and still fail
+every one of these – the defect is in the curvature, not the tangent,
+and curvature is exactly the thing a glance does not check.
+
+A straight line meeting a circular arc, tangent to it at the join, makes
+the gap concrete. The line's curvature is $\kappa=0$ everywhere; the
+arc's is the constant $\kappa=1/R$ from earlier in this chapter. Both
+curves agree in position and tangent direction at the join – it is
+genuinely $G^1$, no kink anywhere to see – but curvature jumps from $0$
+to $1/R$ the instant the join is crossed, discontinuously, with nothing
+in between.
+
+:::{figure} ../figures/generated/ch06-curvature-comb.svg
+:width: 85%
+
+A line meeting a circular arc tangentially – no visible kink anywhere –
+with a **curvature comb**: short teeth perpendicular to the curve, one
+per sample point, scaled to the local curvature. Zero length the entire
+length of the line, a sudden jump to constant length the instant the arc
+begins. The curve looks $G^1$; the comb shows it is not $G^2$.
+:::
+
+## Surfaces
+
+% New top-level section, not a Continuity subsection (book-plan §8.9).
+% Written self-contained enough to split into its own chapter later if
+% that's decided. Planned subsections:
+% ### Parametric Surfaces and the Analytic Family - S(u,v), the normal
+%   vector as a direct callback to Ch5's orientation discussion,
+%   plane/cylinder/cone/sphere/torus as the surface analogue of conics.
+% ### Surfaces from Curves: Sweep and Loft - why a swept profile's own
+%   type decides the output surface's type; forward-references the
+%   actual operations Ch7 builds.
+% ### NURBS Surfaces - tensor-product generalization, control net, the
+%   B-spline-surface special case.
+% ### Continuity at Surface Boundaries - G0/G1/G2 for surfaces,
+%   forward-referencing Ch7's fillet/loft continuity options.
