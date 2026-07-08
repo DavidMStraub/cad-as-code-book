@@ -403,7 +403,19 @@ $\mathbf{P}_n$. Degree $n=1$ gives a straight segment between two points;
 $n=2$ a parabola pulled toward one interior point; $n=3$ the cubic curve
 most CAD systems reach for by default, four control points each pulling
 the curve toward themselves, none of them – other than the first and last
-– ever actually touched by it.
+– ever actually touched by it. The three side by side, squares marking
+the two points the curve actually reaches and circles marking the ones
+that only pull on it:
+
+:::{figure} ../figures/generated/ch06-bezier-degrees.svg
+:width: 90%
+
+Degree 1, 2, and 3 Bézier curves and their control polygons. A cubic can
+do something a parabola never can, no matter where its one interior
+point is placed – bend one way, then the other, an inflection – because
+it has two interior control points pulling in different directions
+instead of one.
+:::
 
 In practice, $\mathbf{C}(u)$ is rarely evaluated by summing Bernstein
 weights directly – at high degree that is exactly the numerically
@@ -503,9 +515,24 @@ basis functions themselves, needing no equations solved by hand at all.
 
 ### B-Splines: Knots and Local Control
 
-A **B-spline curve** replaces the single, whole-interval Bernstein basis
-with a set of basis functions that are each nonzero over only a small
-stretch of $u$:
+Everything in this subsection generalizes the last one rather than
+replacing it – a Bézier curve turns out to be one particular B-spline,
+not a different kind of object, a fact the end of this subsection makes
+precise. It sits at a specific point between the two extremes the
+previous subsection already built. A piecewise Bézier curve gives every
+span its own private set of control points – four, for cubic segments –
+touching no other span's. A single Bézier curve is the opposite extreme:
+one span, every control point governing it at once. A B-spline curve is
+what a real overlap between those two looks like: each span is still
+governed by exactly as many control points as a Bézier segment of the
+same degree would need, but neighboring spans' windows of control points
+overlap, sharing all but one – the next span drops the oldest point in
+the window and picks up one new one, a slide of exactly one control
+point at a time rather than a clean break. That shared, sliding overlap
+is where the automatic continuity later in this subsection actually
+comes from, not a looser blend of the two extremes. A **B-spline curve**
+replaces the single, whole-interval Bernstein basis with a set of basis
+functions that are each nonzero over only a small stretch of $u$:
 
 $$\mathbf{C}(u) = \sum_{i=0}^n \mathbf{P}_i\, N_{i,k}(u),$$
 
@@ -562,6 +589,32 @@ why cubic B-splines ($k=4$, so $C^2$) are the default in CAD software –
 curvature continuity for free, without a single joint equation written by
 hand.
 
+:::{figure} ../figures/generated/ch06-basis-functions.svg
+:width: 100%
+
+The same-degree pair, drawn to the same scale: Bernstein basis functions
+(left), every one of them nonzero across the entire curve, against a
+cubic B-spline basis (right), each function confined to four knot spans.
+Global support is why one Bézier control point moves the whole curve;
+local support is why one B-spline control point does not.
+:::
+
+That difference on the curve itself, not just in the basis functions
+behind it: the same seven points as above, moved the same way, once as
+a single degree-6 Bézier curve and once as the cubic B-spline just
+described.
+
+:::{figure} ../figures/generated/ch06-control-comparison.svg
+:width: 100%
+
+The same seven control points, the same one point moved by the same
+amount. Left: a single Bézier curve of degree 6 – every point on the
+curve shifts, since $\mathbf{P}_1$'s Bernstein weight is nonzero
+everywhere. Right: a cubic B-spline on the knot vector above – the curve
+changes only up to the marked point, then is not merely similar but
+identical, coordinate for coordinate, to the original.
+:::
+
 Repeating a knot in the vector is the deliberate way to spend some of
 that free continuity back. A knot of multiplicity $m$ reduces continuity
 there to $C^{k-1-m}$: multiplicity $1$ (a simple knot) leaves the standard
@@ -574,12 +627,20 @@ a **clamped** B-spline – is the standard way to make a curve actually
 pass through its own first and last control points, the way a Bézier
 curve already does everywhere; without that repetition, a B-spline's
 endpoints, like its interior, are only ever attracted toward the nearby
-control points, never pinned to them. Pushed to the opposite extreme –
-every interior knot repeated $k-1$ times, dropping continuity to a bare
-$C^0$ at each one – a B-spline collapses back into exactly the
-piecewise-Bézier curve the previous subsection gave up on: the general
-representation contains the specific one as the case where every joint is
-deliberately left as sharp as it can be.
+control points, never pinned to them.
+
+Two extremes of that same knob resolve the promise made at the start of
+this subsection. With no interior knots at all – $k$ control points, the
+knot vector $(0,\ldots,0,1,\ldots,1)$, clamped at both ends and nowhere
+else – there is only one span, one polynomial piece, and $N_{i,k}(u)$
+turns out to equal $B_{i,k-1}(u)$ exactly: a single Bézier curve is a
+B-spline with the plainest knot vector it is possible to write down, not
+a different kind of object. Pushed to the opposite extreme – every
+interior knot repeated $k-1$ times, dropping continuity to a bare $C^0$
+at each one – a B-spline collapses instead into the piecewise-Bézier
+curve the previous subsection gave up on. The two curves this chapter
+has built by hand turn out to be the same one representation, evaluated
+at its two opposite settings.
 
 ## NURBS: Rational Curves and Exact Shape
 

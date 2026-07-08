@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="620" height="190" viewBox="0 0 620 190"
+     xmlns="http://www.w3.org/2000/svg">
+  <path d="M 20,130 L 160,45" style="stroke:#5B9BD5;stroke-width:1.2;fill:none;stroke-dasharray:3,3" />
+    <path d="M 20,130 L 160,45" style="stroke:#1E1E2E;stroke-width:2.2;fill:none;stroke-linecap:round" />
+    <rect x="16.5" y="126.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="20" y="146" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+    <rect x="156.5" y="41.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="160" y="33" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+    <text x="90.0" y="184" style="fill:#2C3E50;font-family:Georgia,serif;font-size:12px;text-anchor:middle">degree 1</text>
+  <path d="M 240,130 L 310,30 L 380,130" style="stroke:#5B9BD5;stroke-width:1.2;fill:none;stroke-dasharray:3,3" />
+    <path d="M 240,130 Q 310,30 380,130" style="stroke:#1E1E2E;stroke-width:2.2;fill:none;stroke-linecap:round" />
+    <rect x="236.5" y="126.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="240" y="146" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+    <circle cx="310" cy="30" r="3.5" style="fill:#5B9BD5;stroke:none" />
+    <text x="310" y="18" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+    <rect x="376.5" y="126.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="380" y="146" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">2</tspan></text>
+    <text x="310.0" y="184" style="fill:#2C3E50;font-family:Georgia,serif;font-size:12px;text-anchor:middle">degree 2</text>
+  <path d="M 440,145 L 490,30 L 530,145 L 580,30" style="stroke:#5B9BD5;stroke-width:1.2;fill:none;stroke-dasharray:3,3" />
+    <path d="M 440,145 C 490,30 530,145 580,30" style="stroke:#1E1E2E;stroke-width:2.2;fill:none;stroke-linecap:round" />
+    <rect x="436.5" y="141.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="440" y="161" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+    <circle cx="490" cy="30" r="3.5" style="fill:#5B9BD5;stroke:none" />
+    <text x="490" y="18" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+    <circle cx="530" cy="145" r="3.5" style="fill:#5B9BD5;stroke:none" />
+    <text x="530" y="161" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">2</tspan></text>
+    <rect x="576.5" y="26.5" width="7" height="7" style="fill:#ffffff;stroke:#2C3E50;stroke-width:1.4" />
+    <text x="580" y="18" style="fill:#2C3E50;font-family:Georgia,serif;font-style:italic;font-size:15px;text-anchor:middle">P<tspan baseline-shift="sub" font-size="9">3</tspan></text>
+    <text x="510.0" y="184" style="fill:#2C3E50;font-family:Georgia,serif;font-size:12px;text-anchor:middle">degree 3</text>
+</svg>
