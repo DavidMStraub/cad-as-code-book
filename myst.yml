@@ -30,3 +30,4 @@ project:
     - file: chapters/part-2.md
     - file: chapters/ch05-anatomy-of-a-solid.md
     - file: chapters/ch06-mathematics-of-shape.md
+    - file: chapters/ch07-freeform-modeling.md
