@@ -642,6 +642,82 @@ curve the previous subsection gave up on. The two curves this chapter
 has built by hand turn out to be the same one representation, evaluated
 at its two opposite settings.
 
+### Interpolating Curves Through Points
+
+Every control point in this chapter so far has been a lever, not a
+destination – even a clamped B-spline, the previous subsection's own
+closing case, only pins its *first* and *last* control point onto the
+curve; every point in between stays merely attractive, never actually
+touched. That is fine when a designer is placing control points
+directly, shaping a curve by feel. It is the wrong tool for a different,
+equally common problem: a fixed set of points already exists – measured
+off a physical part, read off a table, sampled from a formula like the
+cross-sections a later chapter builds from a Fourier series – and what
+is needed is a curve that passes through every one of them, exactly,
+not a curve merely herded near them.
+
+This is **interpolation**, and it is a different problem from everything
+built so far in this chapter: given data points
+$\mathbf{Q}_0, \ldots, \mathbf{Q}_n$, find control points
+$\mathbf{P}_0, \ldots, \mathbf{P}_n$ and parameter values
+$u_0 < \cdots < u_n$ such that $\mathbf{C}(u_i) = \mathbf{Q}_i$ for every
+$i$. Fixing a degree, a knot vector, and the $u_i$ turns this into
+$n+1$ linear equations in the $n+1$ unknown control points – each
+equation just the basis-function sum from the very first formula of the
+previous subsection, evaluated at one $u_i$ – solved once for every
+control point together, not derived span by span the way the
+piecewise-Bézier joint conditions were. The $u_i$ are not free:
+the standard choice is **chord length**, $u_0 = 0$ and
+$u_i = u_{i-1} + |\mathbf{Q}_i - \mathbf{Q}_{i-1}|$, so that two data
+points far apart get proportionally more of the parameter range than two
+points close together – a curve whose speed roughly tracks how far
+apart its data actually is, rather than treating every gap as equally
+wide.
+
+`cf.spline` builds exactly this, and its own numbers confirm it directly
+rather than by name alone:
+
+```python
+import math
+points = [(0, 0, 0), (10, 15, 0), (25, 5, 0), (40, 20, 0), (50, 0, 0)]
+curve = cf.spline(points)
+
+chord = [0.0]
+for a, b in zip(points, points[1:]):
+    chord.append(chord[-1] + math.dist(a, b))
+print(chord)
+```
+
+Reading the curve's own knot vector back off it needs the same direct
+kernel access the exact-circle NURBS example later in this chapter
+needs, and it matches this hand-computed list exactly:
+`[0.0, 18.03, 36.06, 57.27, 79.63]` – chord length, not equal spacing,
+with the first and last knots at multiplicity $4$, the clamped case from
+the previous subsection, so the curve actually starts and ends at
+$\mathbf{Q}_0$ and $\mathbf{Q}_4$. Evaluating the curve at each of those
+four knot values returns each $\mathbf{Q}_i$ back exactly, to the full
+precision the kernel computes with – the interpolation condition holding
+in practice, not just in the equations that defined it. The control
+points solved for to make that happen, read the same way, are not the
+data points at all except at the two clamped ends: the interior poles
+sit at points like $(1.76, 13.98, 0)$ and $(9.08, 20.53, 0)$, nowhere
+near the $(10, 15, 0)$ and $(25, 5, 0)$ the curve is nonetheless forced
+to pass through. Interpolation and control-point placement solve
+opposite problems with the same machinery: one is given the curve's
+shape and lets the points fall where the basis functions put them, the
+other is given the points and solves backward for whichever control
+polygon makes the curve hit them anyway.
+
+:::{figure} ../figures/generated/ch06-spline-interpolation.svg
+:width: 65%
+
+The same five points as the code above, and the seven control points
+`cf.spline` actually solves for. The curve (black) passes through every
+data point $\mathbf{Q}_i$; the control polygon (blue) does not – only
+$\mathbf{P}_0$ and $\mathbf{P}_6$, the clamped ends, coincide with a data
+point at all.
+:::
+
 ## NURBS: Rational Curves and Exact Shape
 
 A B-spline generalizes Bézier the way the previous subsection made
@@ -933,7 +1009,8 @@ faces, confirmed here on a curved one.
 Chapter 3's `extrude` and `revolve` already build surfaces, one profile
 curve at a time; this chapter can finally say what kind. Extrude a
 circular profile, and the swept surface inherits the profile's own
-analytic name:
+analytic name; extrude the interpolating spline from earlier in this
+chapter instead, and it inherits that curve's own name just as directly:
 
 ```python
 circle_profile = cf.face(cf.wire(cf.circle(10.0)))
