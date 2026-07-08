@@ -345,3 +345,20 @@ A swept, tapered wing curving up into a winglet at the tip, six stations
 lofted into one solid – root at the left.
 :::
 
+:::{note} Try It
+- Thread a coolant channel through the hex-packed cell grid from Chapter
+  4's own exercise: a `cf.sweep`'d tube along a path that bends around
+  the cells rather than through them, `transition="round"` at each turn.
+  Check, in the viewer, that the tube's own solid does not overlap any
+  cell.
+- Build the lid this chapter's Loft section only described: a rounded
+  rectangle at the tray's own base, a smaller one drafted inward at the
+  top, lofted and then `cf.hollow`ed for wall thickness. Place it over
+  the Chapter 4 tray in the viewer and confirm it actually closes over
+  the pockets rather than cutting into them.
+- Change the wing's spine: move its last control point to a sharper bend
+  or a taller rise and re-loft. At what bend does `cf.loft` stop
+  producing a valid solid, and does `isValid()` actually catch the point
+  where it stops looking like a wing?
+:::
+
