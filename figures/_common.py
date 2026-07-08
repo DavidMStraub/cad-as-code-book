@@ -40,7 +40,7 @@ def _crop_to_content(path: Path, padding: int = CROP_PADDING) -> None:
     im.crop((left, top, right, bottom)).save(path)
 
 
-def render(shapes, name, *, azimuth_offset=20, colors=None):
+def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None):
     """Render one or more CadQuery Shapes to figures/generated/<name>.png."""
 
     if not isinstance(shapes, (list, tuple)):
@@ -66,6 +66,7 @@ def render(shapes, name, *, azimuth_offset=20, colors=None):
 
     plotter.camera_position = "iso"
     plotter.camera.azimuth += azimuth_offset
+    plotter.camera.elevation += elevation_offset
     plotter.enable_parallel_projection()
     plotter.reset_camera()
 
