@@ -1,8 +1,8 @@
 # The Mathematics of Shape
 
-% Status: Curves as Parametric Functions through Continuity drafted in
-% full; only Surfaces remains headings-only. See private/book-plan.md
-% §2 (Ch. 6) and §8.1 for the open depth-control decision, and
+% Status: chapter drafted in full, Curves as Parametric Functions
+% through Surfaces. See private/book-plan.md §2 (Ch. 6) and §8.1 for
+% the open depth-control decision, and
 % private/CAx-Programmierung - 03/04 Geometrie I/II.md for the source
 % lectures this chapter draws its formulas and worked examples from
 % directly. This is a math chapter: formulas carry the argument, code
@@ -23,16 +23,18 @@
 % lookup table) for curve/surface math, NURBS, and continuity; must be
 % self-contained enough for a reader who jumps in here directly.
 %
-% Surfaces (open, per book-plan §8.9) is the only section left, a
-% standalone "## Surfaces" heading, not a Continuity subsection -
-% written with comparable rigor to the curve sections (parametric
-% surfaces + the analytic family, sweep/loft as the surface analogue of
-% control-point curves, NURBS surfaces, surface continuity), and
-% self-contained enough that lifting it into its own chapter later, if
-% book-plan §8.9 resolves that way, is a mechanical cut rather than a
-% rewrite. Sets up sweep/loft in Chapter 7, which cannot be taught
-% without this chapter's vocabulary. Planned subsections still stand,
-% see the % comment under the "## Surfaces" heading below.
+% Surfaces is a standalone "## Surfaces" heading, not a Continuity
+% subsection, written with comparable rigor to the curve sections
+% (parametric surfaces + the analytic family, sweep/loft as the surface
+% analogue of control-point curves - forward-referencing Chapter 7's
+% actual operations rather than teaching them here, NURBS surfaces via
+% the cylinder-as-tensor-product example, surface continuity via
+% fillet), self-contained enough that lifting it into its own chapter
+% later, if book-plan §8.9 resolves that way, is a mechanical cut rather
+% than a rewrite. Every claim checked directly against cf/OCP before
+% writing, same discipline as the rest of the chapter (e.g. cf.cylinder
+% takes diameter not radius, verified by positionAt; ruled vs. smooth
+% loft geomTypes; toNURBS degree/pole counts on a cylinder).
 
 ## Curves as Parametric Functions
 
@@ -852,16 +854,217 @@ begins. The curve looks $G^1$; the comb shows it is not $G^2$.
 
 ## Surfaces
 
-% New top-level section, not a Continuity subsection (book-plan §8.9).
-% Written self-contained enough to split into its own chapter later if
-% that's decided. Planned subsections:
-% ### Parametric Surfaces and the Analytic Family - S(u,v), the normal
-%   vector as a direct callback to Ch5's orientation discussion,
-%   plane/cylinder/cone/sphere/torus as the surface analogue of conics.
-% ### Surfaces from Curves: Sweep and Loft - why a swept profile's own
-%   type decides the output surface's type; forward-references the
-%   actual operations Ch7 builds.
-% ### NURBS Surfaces - tensor-product generalization, control net, the
-%   B-spline-surface special case.
-% ### Continuity at Surface Boundaries - G0/G1/G2 for surfaces,
-%   forward-referencing Ch7's fillet/loft continuity options.
+Every curve in this chapter has been a function of one parameter,
+$\mathbf{C}(u)$. A surface adds a second:
+
+$$\mathbf{S}(u, v) = \begin{pmatrix} x(u,v) \\ y(u,v) \\ z(u,v) \end{pmatrix}, \qquad u \in [u_0, u_1],\ v \in [v_0, v_1].$$
+
+Every `Face` in a B-Rep, Chapter 5's vocabulary again, carries exactly
+this: a surface, plus the two-parameter region that trims it to a
+finite patch – the direct analogue of what an `Edge` carries for a
+curve. Everything this chapter has proved about curves – polynomials
+failing to reach a circle, control points buying stability, weights
+buying exactness, continuity classes controlling how pieces join –
+restates one dimension up, faces instead of edges, without needing new
+mathematics. What is new is the second parameter itself: a curve has one
+tangent direction and one normal; a surface's tangent plane is spanned
+by two independent directions, $\mathbf{S}_u$ and $\mathbf{S}_v$, and its
+normal is their cross product, normalized to unit length – the
+direction Chapter 5's `normalAt()`
+already returned, every time, without this chapter's machinery behind
+it named yet.
+
+### Parametric Surfaces and the Analytic Family
+
+A parametric surface is only useful if $\mathbf{S}(u,v)$ and its normal
+are cheap to evaluate – exactly the property that picked parametric
+curves over the implicit and explicit alternatives in this chapter's
+first section. A short list of surfaces gets that for free, a closed
+formula standing in for the whole two-parameter family, the direct
+surface counterpart of the conics from earlier: a plane, constant normal
+everywhere,
+
+$$\mathbf{S}(u,v) = \mathbf{P}_0 + u\,\mathbf{e}_1 + v\,\mathbf{e}_2;$$
+
+a cylinder of radius $R$, its normal always perpendicular to the axis,
+
+$$\mathbf{S}(u,v) = \mathbf{C} + R\cos u\,\mathbf{e}_1 + R\sin u\,\mathbf{e}_2 + v\,\mathbf{e}_3;$$
+
+a sphere of radius $R$, latitude and longitude,
+
+$$\mathbf{S}(u,v) = R\bigl(\cos u\cos v,\ \sin u\cos v,\ \sin v\bigr);$$
+
+and a torus, major radius $R$ and minor radius $r$, a circle of radius
+$r$ swept around an axis at distance $R$,
+
+$$\mathbf{S}(u,v) = \bigl((R + r\cos v)\cos u,\ (R + r\cos v)\sin u,\ r\sin v\bigr).$$
+
+A cone belongs on the same list – a circular cross-section shrinking
+linearly to a point – though it already shows this family is less
+uniform than the conics were: a cylinder's own $v$ turns out to be
+literally its height, checked directly below, but nothing forces every
+analytic surface's second parameter to mean the same thing twice; a
+cone's, in the kernel underneath this book, is arc length along the
+slant instead.
+
+```python
+from cadquery import func as cf
+
+cyl = cf.cylinder(10.0, 30.0)
+side = cyl.Faces()[0]
+print(side.geomType(), side.uvBounds())
+
+p = side.positionAt(0.0, 15.0)
+print(p, side.normalAt(p))
+```
+
+`CYLINDER`, and bounds `(0.0, 6.283, 0.0, 30.0)` – $u$ over a full turn,
+$v$ from $0$ to $30$, the cylinder's own height, matching the formula
+above with nothing hidden. `positionAt(0.0, 15.0)` lands at
+`(5.0, 0.0, 15.0)`: radius $5$, half of the $10$-millimeter *diameter*
+`cf.cylinder` actually takes as its first argument, at half the
+$30$-millimeter height. `normalAt` there returns `(1.0, 0.0, 0.0)`,
+pointing straight out along the radius, away from the solid's own
+material – the same rule Chapter 5's orientation section fixed for flat
+faces, confirmed here on a curved one.
+
+### Surfaces from Curves: Sweep and Loft
+
+Chapter 3's `extrude` and `revolve` already build surfaces, one profile
+curve at a time; this chapter can finally say what kind. Extrude a
+circular profile, and the swept surface inherits the profile's own
+analytic name:
+
+```python
+circle_profile = cf.face(cf.wire(cf.circle(10.0)))
+extruded = cf.extrude(circle_profile, (0, 0, 30))
+print([f.geomType() for f in extruded.Faces()])
+
+points = [(0, 0, 0), (10, 15, 0), (25, 5, 0), (40, 20, 0), (50, 0, 0), (0, 0, 0)]
+spline_profile = cf.face(cf.wire(cf.spline(points)))
+extruded_spline = cf.extrude(spline_profile, (0, 0, 10))
+print([f.geomType() for f in extruded_spline.Faces()])
+```
+
+`['CYLINDER', 'PLANE', 'PLANE']` for the circle – a straight extrusion
+of a circle really is just a cylinder, no different in kind from
+`cf.cylinder` itself. `['EXTRUSION', 'PLANE', 'PLANE']` for the spline
+profile: still a single ruled surface, straight lines connecting the
+same curve at every height, but no longer a name this chapter's
+analytic family covers – `EXTRUSION` is its own distinct type in OCCT,
+not a stand-in for `BSPLINE`. Sweep a profile along a curved path
+instead of a straight direction, and even that name runs out: a circle
+swept along a bent spline path comes back `BSPLINE`, the same fallback
+every high-degree curve in this chapter has landed on already. **Sweep**
+and **loft**, the operations that build surfaces like these, are
+Chapter 7's; what belongs here is only what their output *is*.
+
+Loft carries a choice `extrude` and `revolve` never have to make: what
+happens *between* the given sections. `ruled=True` connects consecutive
+sections with straight lines, degree $1$ between each pair, no matter
+how many sections there are – the surface analogue of piecewise Bézier
+earlier in this chapter, each interval its own patch, joined only
+$C^0$. The default, `ruled=False`, blends every section into a single
+smooth surface, continuity controlled by the `continuity` argument
+($C^2$ by default) – the surface analogue of a B-spline, one formula
+covering every span at once.
+
+```python
+sections = [cf.wire(cf.circle(10.0)),
+            cf.wire(cf.circle(16.0)).translate((0, 0, 25)),
+            cf.wire(cf.circle(10.0)).translate((0, 0, 50))]
+print([f.geomType() for f in cf.loft(sections, ruled=True).Faces()])
+print([f.geomType() for f in cf.loft(sections, ruled=False).Faces()])
+```
+
+`['CONE', 'CONE']` for the ruled version: two straight-sided cones,
+meeting at the middle circle with no attempt at a smooth transition.
+`['BSPLINE']` for the default: one face, the bulge between the sections
+blended in rather than creased.
+
+:::{figure} ../figures/generated/ch06-loft-continuity.png
+:width: 70%
+
+The same three circles – radius 10, 16, 10 – lofted two ways. Ruled
+(left): two straight-sided cones meeting at a visible crease at the
+middle circle, $C^0$ only. Smooth (right, the default): one B-spline
+surface blending the bulge in, no crease anywhere.
+:::
+
+### NURBS Surfaces
+
+The weights that turned a B-spline curve into an exact circle
+generalize to two parameters exactly the way the surfaces above
+generalized curves – one weight $h_{ij}$ per point on a two-dimensional
+**control net** $\mathbf{P}_{ij}$ instead of one per point on a control
+polygon:
+
+$$\mathbf{S}(u,v) = \frac{\sum_i \sum_j h_{ij}\, \mathbf{P}_{ij}\, N_{i,p}(u)\, N_{j,q}(v)}{\sum_i \sum_j h_{ij}\, N_{i,p}(u)\, N_{j,q}(v)}.$$
+
+Setting every $h_{ij}=1$ collapses the denominator to $1$ the same way
+it did for curves, since $\sum_i N_{i,p}(u) = \sum_j N_{j,q}(v) = 1$
+separately – the ordinary B-spline surface is the $h_{ij}=1$ special
+case of NURBS, one link further down the same chain this chapter has
+been building since Bézier. OCCT does not even keep the two cases as
+separate classes: `geomType() == 'BSPLINE'` covers both a rational and a
+non-rational surface alike, the weights hidden inside the object rather
+than switching its type.
+
+The cylinder from earlier in this section makes the tensor product
+concrete, because a cylinder is exactly the shape the exact-circle
+NURBS curve earlier in this chapter was built to trace, extruded:
+
+```python
+from OCP.BRep import BRep_Tool
+
+nurbs = side.toNURBS()
+surf = BRep_Tool.Surface_s(nurbs.wrapped)
+print(surf.UDegree(), surf.VDegree())
+print(surf.NbUPoles(), surf.NbVPoles())
+print(surf.IsURational(), surf.IsVRational())
+```
+
+`toNURBS` is the public API; reading degree and pole counts back off the
+result needs the same direct look at OCCT's own `Geom_BSplineSurface`
+the exact-circle example used earlier, since neither number is exposed
+through `cf`. Degree $2$ in $u$, degree $1$ in $v$: the circular
+direction needs the same quadratic degree the exact quarter-circle curve
+did, the straight extrusion direction needs nothing more than a line.
+`IsURational()` is `True`, `IsVRational()` is `False` – the weights that
+bend the circular direction into an exact circle vary with $i$ only,
+$h_{ij} = h_i$ for every $j$, uniform along the length of the cylinder.
+A rational NURBS curve, in effect, extruded degree $1$ into a surface –
+the tensor product formula above doing nothing more exotic than that for
+this particular shape.
+
+### Continuity at Surface Boundaries
+
+$G^0$, $G^1$, $G^2$ restate exactly as before – position, tangent plane,
+and curvature agreeing across a shared edge in place of a shared point –
+the same three classes, one dimension up, with the same practical
+stakes: manufacturing, optical inspection, aerodynamics, and mechanical
+contact do not stop caring about curvature just because the join is now
+a curve instead of a point. A **fillet**, already used without this
+vocabulary since Chapter 2, is the clearest worked example, because it
+is built to hit exactly one of these classes and no better:
+
+```python
+box = cf.box(50, 30, 20)
+filleted = cf.fillet(box, box.edges(), 3.0)
+print(set(f.geomType() for f in filleted.Faces()))
+```
+
+`{'PLANE', 'CYLINDER', 'SPHERE'}` – a cylindrical patch along each
+rounded edge, a spherical patch at each rounded corner where three edges
+meet, both tangent to the flat faces they join, $G^1$ by construction.
+Nothing about that tangency touches curvature: the flat faces carry
+curvature $0$ everywhere, the fillet's cylindrical patches carry the
+constant curvature $1/R$ their $3\,\text{mm}$ radius fixes, and the join between them
+jumps from one to the other exactly the way the curvature comb earlier
+in this chapter already made visible for a line meeting an arc – the
+identical defect, a surface instead of a curve. Loft's `continuity`
+argument, `C1`, `C2`, or `C3`, seen above, is Chapter 7's dial for the
+same question at a lofted seam rather than a fillet's – the same
+curvature classes from this chapter's Continuity section, now decided
+per construction rather than derived from a control-point identity by
+hand.
