@@ -39,7 +39,7 @@ options:
       render a plain colour cover with no image.
   - id: cover_bg_color
     type: string
-    default: "#6E8CA9"
+    default: "#587695"
     description: Cover page background colour (fills the whole page)
   - id: cover_text_color
     type: string
