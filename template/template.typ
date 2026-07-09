@@ -100,10 +100,17 @@
 // Aside (margin note rendered inline for print)
 #let aside(title, body) = callout(icon: "→", bg: bg-aside, border: border-aside, title: title, body)
 
-// Heading hierarchy
-#show heading: it => { set par(first-line-indent: 0em); it }
+// Heading hierarchy. Headings are set ragged-right, not justified: the
+// body's #set par(justify: true) would otherwise stretch word spacing on
+// wrapped multi-line titles to fill the line, which looks bad at heading
+// sizes with only a handful of words per line. The level.where(N) rules
+// below build their own content from scratch (text(), pagebreak(), ...)
+// rather than re-emitting `it`, so this generic rule never actually reaches
+// them - each level rule sets its own `justify: false` explicitly instead.
+#show heading: it => { set par(first-line-indent: 0em, justify: false); it }
 
 #show heading.where(level: 1): it => {
+  set par(justify: false)
   if it.at("supplement", default: auto) == [part] {
     // Part divider page
     pagebreak(weak: true, to: "odd")
@@ -136,7 +143,7 @@
 }
 
 #show heading.where(level: 2): it => {
-  set par(first-line-indent: 0em)
+  set par(first-line-indent: 0em, justify: false)
   v(1.4em)
   text(font: sans-font, size: 1.35em, weight: "semibold", fill: accent, {
     counter(heading).display("1.1")
@@ -147,14 +154,14 @@
 }
 
 #show heading.where(level: 3): it => {
-  set par(first-line-indent: 0em)
+  set par(first-line-indent: 0em, justify: false)
   v(1em)
   text(font: sans-font, size: 1.2em, weight: "medium", fill: accent, it.body)
   v(0.2em)
 }
 
 #show heading.where(level: 4): it => {
-  set par(first-line-indent: 0em)
+  set par(first-line-indent: 0em, justify: false)
   v(0.7em)
   text(font: sans-font, size: 1em, weight: "regular", style: "italic", it.body)
   v(0.15em)
@@ -195,6 +202,41 @@
 
 // Figure captions
 #show figure.caption: it => text(size: 0.87em, style: "italic", it)
+
+// Tables: not stylable from template.typ - each chapter #include re-imports
+// myst-imports.typ's own tableStyle default, shadowing anything set here.
+// Style is defined once in table-style.typ instead; put this right before
+// any table: {raw:typst} #import "table-style.typ": tableStyle, columnStyle
+
+// Cover page — full-bleed, sits in front of the title page proper.
+// Solid colour background (fits the mood of the cover image); author,
+// title and subtitle are left-aligned above the image, which is shown
+// at full width and uncropped (width-only sizing preserves its aspect
+// ratio).
+#page(
+  margin: 0pt,
+  header: none,
+  footer: none,
+  fill: rgb("[-options.cover_bg_color-]"),
+)[
+  #pad(x: 2.8cm, top: 2.5cm)[
+    #set text(fill: rgb("[-options.cover_text_color-]"))
+    #set par(justify: false)
+    #text(font: sans-font, size: 2.1em, weight: "regular", fill: rgb("[-options.cover_bg_color-]").lighten(65%))[
+      #smallcaps[[# for author in doc.authors #][-author.name-][# if not loop.last #] · [# endif #][# endfor #]]
+    ]
+    #v(2.0cm)
+    #text(font: sans-font, size: 4.6em, weight: "bold")[[-options.book_title-]]
+    [# if options.book_subtitle #]
+    #v(0.1cm)
+    #text(font: sans-font, size: 2.1em, weight: "regular", fill: rgb("[-options.cover_text_color-]").lighten(15%))[[-options.book_subtitle-]]
+    [# endif #]
+  ]
+  [# if options.cover_image #]
+  #v(1fr)
+  #image("[-options.cover_image-]", width: 100%)
+  [# endif #]
+]
 
 // Title page
 #page(

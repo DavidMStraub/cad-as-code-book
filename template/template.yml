@@ -10,6 +10,8 @@ template: template.typ
 files:
   - template.typ
   - cc-by.svg
+  - table-style.typ
+  - cover.png
 
 doc:
   - id: title
@@ -27,6 +29,22 @@ options:
     type: string
     default: ""
     description: Book subtitle
+  - id: cover_image
+    type: string
+    default: "cover.png"
+    description: >
+      Filename of the cover image (must be listed under `files` in
+      template.yml so jtex copies it alongside template.typ), shown at
+      full width and uncropped below the title. Leave empty ("") to
+      render a plain colour cover with no image.
+  - id: cover_bg_color
+    type: string
+    default: "#6E8CA9"
+    description: Cover page background colour (fills the whole page)
+  - id: cover_text_color
+    type: string
+    default: "#ffffff"
+    description: Title/subtitle/author text colour on the cover page
   - id: paper
     type: choice
     default: a4

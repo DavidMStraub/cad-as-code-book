@@ -31,3 +31,6 @@ project:
     - file: chapters/ch05-anatomy-of-a-solid.md
     - file: chapters/ch06-mathematics-of-shape.md
     - file: chapters/ch07-freeform-modeling.md
+    - file: chapters/part-3.md
+    - file: chapters/ch08-models-you-can-trust.md
+    - file: chapters/ch09-assemblies-and-release-pipelines.md
