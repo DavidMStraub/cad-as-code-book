@@ -38,6 +38,64 @@
 % rather than re-teaching them, and adds the complementary case Ch. 5
 % does not: isValid() returning True on a result that is silently empty
 % or silently wrong.
+%
+% Second pass, after auditing X2/X3 lecture messages against the draft:
+% - The Types as Contracts section's original claim ("no type checker
+%   caught the mismatch") was FALSE - verified directly, both mypy and
+%   pyright DO flag `cell_can_unvalidated`'s `-> Solid` before it ever
+%   runs (`error: Incompatible return value type (got "Shape", expected
+%   "Solid")`), because CadQuery types `Solid.__sub__` as returning
+%   `Shape` honestly, not imprecisely. David's correction: this is not a
+%   stub-accuracy gap, it's that a boolean's true output type is
+%   genuinely undecidable from source alone (depends on the specific
+%   geometry at runtime) - Shape is the CORRECT annotation for such an
+%   operation, and isinstance narrowing is the only place that can ever
+%   resolve it, not a workaround for lazy typing. Rewrote the section
+%   around this. cast()/`# type: ignore` added as the anti-pattern this
+%   narrowing replaces - David: "type:ignore is evil," encourage
+%   mypy/pyright/Pylance use routinely, not just when something breaks.
+% - Third pass: David flagged the isinstance check on `can` (the boolean
+%   result) as "silly... we know it will never fail" once wall/height are
+%   validated - correct, verified directly (couldn't produce a Compound
+%   from valid inputs). Rather than swap the whole chapter's worked
+%   example for something riskier (considered a sweep per Ch. 7 - rejected,
+%   the pinched-tube case is always a valid Solid, isValid()-catches-
+%   wrongness is Ch. 7's own point, not a Solid/Compound type problem),
+%   kept cell_can and fixed the honesty of the claim instead: David - "in
+%   real life I'd use assert here" - correct, and exposed a real bug in
+%   my own verification. My earlier "both mypy and pyright report zero
+%   issues" claim was checked against a SIMPLIFIED version missing the
+%   trailing `cf.fillet` call; `cf.fillet` is ALSO typed to return `Shape`
+%   (a fillet can fail to stay a clean solid too), so the real function
+%   needs a SECOND `assert isinstance(filleted, Solid)` after the fillet
+%   call, not just one after the boolean - verified: without it mypy
+%   flags the final `return` line; with it, both mypy and pyright report
+%   zero issues on the actual full function. Both narrowings changed from
+%   `if not isinstance(...): raise RuntimeError(...)` to bare
+%   `assert isinstance(...)`, matching X3's own assert-for-internal-
+%   invariants rule properly this time (my prior draft had the if/raise
+%   vs assert mapping backwards). This also resolves David's "trivial"
+%   complaint honestly: the boolean's own assert IS close to a formality
+%   given validated inputs, stated as such in the text; the fillet's
+%   assert is the less trivial one, backed by the soft-cap argument from
+%   §2 rather than a simple bound, and is where the real teaching content
+%   now sits.
+% - pytest.approx(analytic, abs=5.0) replaces the old manual
+%   `abs(diff) < 1.0` - that old tolerance was simply wrong, caught by
+%   re-verifying: the actual diff for r_outer=9.0, wall=2.0, height=65.0,
+%   rim_fillet=0.5 is ~2.996 mm^3, not under 1.0. Re-verified abs=5.0
+%   passes.
+% - Added: bounding-box + face-count checks in §3 (named in book-plan's
+%   own Ch. 8 description, never actually written until now); pure-
+%   function-is-testable principle opening §5; the "reimplementation"
+%   antipattern (test recomputes the function's own formula) after the
+%   pytest example; a refactor-keeps-tests-green Try It bullet.
+% - Deliberately NOT added: TDD/red-green-refactor, unit-vs-integration-
+%   test distinction, the other X2 antipatterns beyond reimplementation,
+%   angle-unit-in-parameter-name convention (no natural landing spot yet
+%   - Ch. 3's rz= is CadQuery's own kwarg, already clarified inline as
+%   degrees) - scoped out as checklist bloat / no current landing point,
+%   not oversights.
 
 ## Validating Parameters Before the Kernel Runs
 
@@ -207,10 +265,12 @@ print(can.Volume() - analytic)
 ```
 
 This prints a number on the order of `1e-12` – floating-point noise, not
-a real discrepancy. The same idea, applied instead of assumed, is what
-would have caught the `wall == r_outer` failure two sections back
-without ever inspecting the shape by eye: a can whose volume matches a
-solid cylinder's, not a hollow one's, fails this check immediately.
+a real discrepancy. The same idea, applied instead of assumed, would
+have caught this chapter's own earlier `wall == r_outer` failure
+immediately, without ever inspecting the shape by eye: `too_thick`, the
+solid cylinder `isValid()` reported as a perfectly good can, has a
+volume that matches a solid cylinder's formula, not a hollow one's –
+exactly what this check is built to notice.
 
 A second property worth testing directly is one geometry alone cannot
 see: whether two cans, placed where a design puts them, actually
@@ -237,40 +297,111 @@ if a later change shrinks the spacing without anyone re-deriving it.
 boolean, cheap enough to run on every neighboring pair in a pattern
 rather than trusted from the formula that placed them.
 
+Two more properties are worth checking as a matter of course, because
+both are cheap and because either `wall == r_outer` or `wall > r_outer`
+from the first section would have looked wrong on sight, not just in a
+printed number: the can's own outer size, and how many faces its
+boundary is built from.
+
+```python
+can = cell_can(9.0, 2.0, 65.0)
+bbox = can.BoundingBox()
+print(bbox.zlen, bbox.xlen)
+print(len(can.Faces()))
+```
+
+```
+65.0 18.0
+4
+```
+
+`bbox.zlen` matches `height` and `bbox.xlen` matches `2 * r_outer` –
+both read directly off the can's own geometry rather than assumed from
+the parameters that were supposed to produce them, catching a scale
+error a volume check alone might miss, since two shapes can share a
+volume without sharing a size. Four faces – both cylinders, both end
+caps – is the exact topology this construction is supposed to produce;
+the filleted version from the previous section has five, a `TORUS`
+face added at the rim. A face count that doesn't match is a first,
+cheap sign that a boolean or a fillet did something other than
+intended, before looking at a single number.
+
 ## Types as Contracts
 
 Every version of `cell_can` so far has carried a return annotation,
 `-> Solid`, the same practice this book has followed on every function
 signature since Chapter 2. A type hint is a checked promise only where
-something actually checks it: a type checker such as mypy reads
-`wall: float` and flags a call that passes a string before the code
-ever runs, and an editor uses the same annotation to complete
-`can.` correctly – real guarantees, but both of them live entirely at
-the level of the *source code*, before any of it executes.
+something actually checks it: a type checker such as **mypy** or
+**pyright** reads a function's annotations and flags a mismatch before
+the code ever runs, far cheaper than a boolean or a fillet call into
+the kernel. Both are worth running routinely, not just once something
+has already gone wrong.
 
-None of that reaches a value built from a kernel operation. This
-chapter's very first `cell_can`, before any validation was added,
-carried the same `-> Solid` promise:
+This chapter's very first `cell_can`, before any validation was added,
+returned `outer - inner` directly:
 
 ```python
 def cell_can_unvalidated(r_outer: float, wall: float, height: float) -> Solid:
     outer = cf.cylinder(d=2 * r_outer, h=height)
     inner = cf.cylinder(d=2 * (r_outer - wall), h=height)
     return outer - inner
-
-
-degenerate = cell_can_unvalidated(9.0, 0.0, 65.0)
-print(type(degenerate).__name__)
 ```
 
-This prints `Compound`, not `Solid` – the return annotation promised a
-type the function does not actually always deliver, and no type
-checker caught the mismatch, because nothing about the *source code*
-is wrong. `outer - inner` really can return either type depending on
-values only known once the kernel runs, and a static tool has no way
-to evaluate those values in advance. A type hint here is documentation
-of intent, not a guarantee of what came back; telling the two apart at
-the point a result is actually used is what `isinstance` is for:
+Running `mypy` against this file, without ever calling the function:
+
+```
+error: Incompatible return value type (got "Shape", expected "Solid")
+```
+
+`Shape` is the base class Chapter 5 introduced `Solid`, `Compound`,
+and the rest of the hierarchy as belonging to – the general type that
+covers all of them, used whenever the exact one is not yet known. In
+CadQuery's own source code, the `-` operator is declared to return
+`Shape`, not `Solid` – and that is worth taking seriously rather than
+reading past, because a boolean's actual result genuinely depends on
+the geometry involved. Two solids that touch, overlap, or cancel out
+can produce a `Solid`, a `Compound`, or an empty result, and which one
+happens is not decidable by reading the code that calls `-`; it
+depends on values only the kernel resolves at the moment it runs.
+Declaring the result as `Shape` is the *correct*, honest type for an
+operation like that – not a looser placeholder standing in for
+`Solid`, but the actual guarantee `-` is able to make ahead of time.
+`cell_can_unvalidated`'s own `-> Solid` was the real mistake here: it
+promised a narrower type than the operation it is built from can
+promise.
+
+Going from `Shape` down to `Solid` is an instance of **type
+narrowing**: telling a type checker that a value's actual type is more
+specific than the type it was declared with, at a point in the code
+where that has become true. Here it is not optional cleanup – it is
+the only place that narrowing can happen, because it is the only point
+where the actual value, not just its declared type, is available:
+
+```python
+can = outer - inner
+assert isinstance(can, Solid)
+```
+
+`0 < wall < r_outer` already rules out the only inputs that could make
+this particular cut come back as anything other than a `Solid`, so by
+the time this line runs the assertion is close to a formality – cheap
+insurance against a case validation has already excluded, not a real
+branch. That is exactly what `assert` is for: a statement of something
+that must be true given correct code above it, not a guard against a
+value that might legitimately vary. `wall`'s own bounds get `if`/`raise`
+instead, further up, because they check a *caller's* input – something
+that can be anything a caller decides to pass, not an internal
+consequence of code already checked.
+
+The fillet call two lines later is the less obvious case. Whether it
+stays a clean `Solid` does not follow from a simple bound the way the
+boolean above does; it follows from the soft-capping argument two
+sections back, `rim_fillet = min(rim_fillet, wall * 0.45)`, capping the
+radius under the point where the fillet becomes geometrically
+impossible. `cf.fillet` is typed to return `Shape` for the same reason
+`-` is – a fillet can fail to produce a clean solid too – so the same
+narrowing belongs here as well, backed this time by a geometric
+argument rather than an arithmetic one:
 
 ```python
 def cell_can(r_outer: float, wall: float, height: float, rim_fillet: float = 1.0) -> Solid:
@@ -281,29 +412,55 @@ def cell_can(r_outer: float, wall: float, height: float, rim_fillet: float = 1.0
     outer = cf.cylinder(d=2 * r_outer, h=height)
     inner = cf.cylinder(d=2 * (r_outer - wall), h=height)
     can = outer - inner
-    if not isinstance(can, Solid):
-        raise RuntimeError("cut did not produce a single solid")
+    assert isinstance(can, Solid)
     rim_fillet = min(rim_fillet, wall * 0.45)
     top_outer_edge = max(can.edges(">Z").Edges(), key=lambda e: e.radius())
-    return cf.fillet(can, top_outer_edge, rim_fillet)
+    filleted = cf.fillet(can, top_outer_edge, rim_fillet)
+    assert isinstance(filleted, Solid)
+    return filleted
 ```
 
-The input validation at the top of this function and the `isinstance`
-check in the middle are answering two different questions.
-`0 < wall < r_outer` states what the *caller* must guarantee;
-`isinstance(can, Solid)` states what the *kernel* must have produced,
-given that the caller did. Ordinary Python code narrows types this way
-constantly – `assert isinstance(x, int)` before treating `x` as one –
-and a `Shape` hierarchy with `Solid`, `Compound`, `Shell` and the rest
-as genuinely distinct classes, not one grab-bag type, makes that
-narrowing mean something concrete here: an unnarrowed `Shape` might not
-have a single well-defined `Volume()` to check against the analytic
-formula earlier in this chapter at all. This version's own `-> Solid`
-annotation is finally true every time it runs – not because a type
-checker enforces it, but because the `isinstance` check right above the
-`return` refuses to let the function end any other way.
+Both `mypy` and `pyright` report zero issues against this version –
+not because either annotation is trusted on faith, but because each
+`assert isinstance(...)` is itself something both tools recognize as
+narrowing: after it, they know the value really is a `Solid`, the same
+fact the check enforces at runtime. Static and runtime checking agree
+here for the same reason: two runtime checks are what make the
+promises both are making actually true.
+
+Two shortcuts exist that look like they solve the same problem and do
+not. `cast(Solid, outer - inner)` tells the type checker to stop
+complaining, with zero effect at runtime – the value is exactly as
+uncertain as it was before, now with the warning that would have
+caught it removed. `# type: ignore` silences the same message without
+resolving it either. Both make the type checker's output look clean;
+neither makes either return statement any truer. Treat either one
+appearing on a line like this as worth asking about directly – almost
+always an `assert isinstance` was skipped, not made unnecessary.
+
+`0 < wall < r_outer` and the two `assert isinstance` checks are
+answering different questions, worth keeping straight. `if wall <= 0:
+raise` states what a *caller* must guarantee – something that can
+legitimately be anything, so it has to be checked explicitly, with a
+clear exception naming what went wrong. The two `assert` lines state
+what the *kernel* must have produced, given that the caller already
+held up its end – an internal invariant, true by construction if the
+reasoning above each one is correct, which is exactly the case `assert`
+exists for: not a check against unpredictable input, but a statement
+that the code above it already made the outcome certain.
 
 ## Verification on Every Change
+
+None of this chapter's checks would be worth automating if `cell_can`
+itself were harder to call in isolation. It has been a **pure
+function** since the first line of this chapter – geometry in,
+geometry out, no viewer, no file write, no global state – which is
+exactly why every check so far could be three lines at a prompt rather
+than a small program of its own. A function that also opens a viewer
+window or exports a file can still be checked, but every check then
+pays for that extra work and has to route around it; keeping
+construction separate from display and export is what keeps the
+geometry itself this cheap to verify.
 
 Every check this chapter has run so far – `isValid()`, the volume
 comparison, the collision check – was typed at a prompt, read once, and
@@ -313,14 +470,21 @@ analytic)` before every future change to `cell_can`, so a change that
 quietly breaks that match can sit in the repository for months before
 anyone happens to run that exact line again.
 
-A **test** turns a check like that into something that runs itself: a
+A **unit test** turns a check like that into something that runs itself: a
 small function that calls the code under test and states, with
 `assert`, what must be true about the result, rather than printing a
 number for a person to judge. It succeeds silently or fails loudly, the
 same result whoever runs it and whenever they run it – the manual
 checks earlier in this chapter, made repeatable. `pytest` is the tool
 this book uses to collect and run functions like that; it needs no
-special syntax to find them, only a name starting with `test_`:
+special syntax to find them, only a name starting with `test_`.
+
+Comparing the two volumes for exact equality would fail for a reason
+that has nothing to do with `cell_can` being wrong: `0.1 + 0.2 == 0.3`
+is `False` in Python, and every geometry operation accumulates the same
+kind of floating-point rounding on the way to a final number.
+`pytest.approx` states a tolerance explicitly instead of comparing bit
+for bit:
 
 ```python
 import pytest
@@ -331,7 +495,7 @@ def test_cell_can_matches_analytic_volume():
     can = cell_can(r_outer, wall, height, rim_fillet=0.5)
     analytic = math.pi * (r_outer**2 - (r_outer - wall) ** 2) * height
     assert can.isValid()
-    assert abs(can.Volume() - analytic) < 1.0  # fillet removes a little material
+    assert can.Volume() == pytest.approx(analytic, abs=5.0)  # fillet removes a few mm³
 
 
 def test_cell_can_rejects_wall_past_outer_radius():
@@ -339,13 +503,24 @@ def test_cell_can_rejects_wall_past_outer_radius():
         cell_can(9.0, 10.0, 65.0)
 ```
 
-Nothing about these two functions is CadQuery-specific; `assert` states
-the invariant, `pytest.raises` states which input should fail and how,
-the same vocabulary any Python test suite uses. Run on its own,
-`pytest` reads a project's `tests/` directory, calls every function
-matching that name, and reports which passed and which did not – the
-same two checks this chapter already ran by hand, now able to outlive
-the terminal they were first typed into.
+One trap is worth naming before moving on. A unit test that recomputes
+the same formula the function itself uses proves nothing, because a
+mistake in that formula – a stray factor, a wrong sign – would sit
+inside both the function and its own test, agreeing with each other
+and wrong together. `test_cell_can_matches_analytic_volume` avoids this
+by construction: `analytic` is a closed-form fact about a hollow
+cylinder's volume, independent of how `cell_can` happens to build one
+– not a restatement of `cell_can`'s own construction steps in a
+different order. A unit test's real job is checking a function against
+a truth it does not already assume.
+
+Nothing about these two test functions is CadQuery-specific; `assert`
+states the invariant, `pytest.raises` states which input should fail
+and how, the same vocabulary any Python test suite uses. Run on its
+own, `pytest` reads a project's `tests/` directory, calls every
+function matching that name, and reports which passed and which did
+not – the same checks this chapter already ran by hand, now able to
+outlive the terminal they were first typed into.
 
 A test that only runs when a person remembers to run it is still only
 as reliable as that person's memory, though – exactly the gap between
@@ -354,32 +529,18 @@ checked it." **Continuous integration** (CI) closes that gap by moving
 the trigger: instead of a person deciding to run the tests, a shared
 server runs them automatically on every change pushed to the
 repository, before that change gets to call itself finished. GitHub
-Actions is one such server, configured with a file describing what to
-run and when:
+Actions is one such server: a short configuration file, committed to
+the repository like any other file, names the trigger – every `push`
+or `pull_request` – and the steps to run on it: check the repository
+out fresh, install CadQuery and pytest, then run `pytest tests/`,
+exactly the command a developer would type locally.
 
-```yaml
-name: geometry tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install cadquery pytest
-      - run: pytest tests/
-```
-
-Every `push` or `pull_request` checks the repository out fresh,
-installs CadQuery and pytest, and runs the same `tests/` directory a
-developer would run locally – except automatically, on every change,
-whether or not its author remembered to. A change that quietly moves
-`wall` past `r_outer` somewhere upstream, or loosens the validation
-this chapter just added, fails this job before it fails a person – the
-same fail-fast argument as `if`/`raise`, applied now to the
-repository's history instead of to one function call.
+Nothing about that sequence depends on a person remembering to run it.
+A change that quietly moves `wall` past `r_outer` somewhere upstream,
+or loosens the validation this chapter just added, fails this job
+before it fails a person – the same fail-fast argument as `if`/`raise`,
+applied now to the repository's history instead of to one function
+call.
 
 :::{note} Try It
 - Add a rectangular wiring slot to Chapter 4's tray, and give its
@@ -396,4 +557,9 @@ repository's history instead of to one function call.
   `isValid()`, the analytic volume, and an `isinstance` narrowing after
   the boolean – to `make_cell` from Chapter 4, for all three of its
   named `CellSpec` variants at once.
+- Rebuild `cell_can`'s outer and inner cylinders with `extrude` on a
+  circular profile instead of `cf.cylinder`, and rerun this chapter's
+  own tests unchanged. A test suite that does not need to change when
+  the implementation does is what makes a rewrite like this safe to
+  attempt in the first place.
 :::

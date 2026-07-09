@@ -60,7 +60,12 @@ matter – a single fused lump has no way to say "this half is aluminum,
 that one is a purchased cell." An **assembly** keeps shapes separate on
 purpose: a named tree of individual parts, each with its own placement,
 appearance, and identity, positioned relative to one another without
-ever merging their geometry.
+ever merging their geometry. This is not a notion CadQuery invented for
+its own convenience – product structure, an assembly's parts and their
+relative placements, is part of the STEP standard itself, the same
+industry-wide exchange format this chapter's own STEP section reaches
+for; any CAD system reading a STEP assembly back expects to find
+exactly this kind of tree, not a single fused shape.
 
 Chapter 4's tray and Chapter 3's cell are exactly this kind of pair –
 two parts that belong together but should never be fused into one –
