@@ -75,16 +75,15 @@ involves simulation and iteration – an increasing share, in our experience –
 this integration is the approach's largest payoff, and Part III of this book
 is devoted to it.
 
-A note on AI is warranted, because it changes the economics of everything
+A note on AI is warranted, because it amplifies several of the advantages
 above. Language-model assistants operate on text, and a design model written
-in Python is text of exactly the kind they handle well: they can draft,
-explain, and restructure such models, and many engineers without a software
-background now write working tools this way. The reason the collaboration is
-sound rather than reckless is the checkability described above – generated
-code can be diffed, tested, and reviewed before it is trusted. This book
-assumes a reader who works in that mode. Some arrive from engineering and
-bring code into their design work; others arrive from software, data, or
-simulation and extend their work to physical parts.
+in Python is text of a tractable kind: it can be drafted, explained,
+restructured, and reviewed with the same tools used for the rest of the
+model. The reason this is useful rather than reckless is the checkability
+described above – generated code can be diffed, tested, and reviewed before
+it is trusted. This book assumes a reader who works in that mode. Some
+arrive from engineering and bring code into their design work; others arrive
+from software, data, or simulation and extend their work to physical parts.
 
 The approach has costs, and they should be stated plainly. It must be
 learned; constructions have to be thought through rather than adjusted by
@@ -191,30 +190,40 @@ Technology**, OCCT, and it has been developed continuously ever since – since
 part of a professional CAD system, the exact geometric core, has now been
 openly available for a quarter of a century.
 
-Software grew on it. **FreeCAD**, first released in 2002, wrapped the kernel in
-an open-source parametric CAD application in the familiar graphical style –
-and made it scriptable from Python. OpenSCAD, first released in 2010 and
-carried by the 3D-printing wave, put a different idea in front of a large
-audience: the model *is* the script. Its models were programs in a small
-dedicated language, its geometry was CSG, and its output was meshes – the
-limits of the previous section in working form – but it showed a generation
-of makers that parts can be text, with much of what §1.1 describes:
-parameters, sharing, version control.
+Software grew on it in several directions. **FreeCAD**, first released in
+2002, wrapped the kernel in an open-source parametric CAD application in the
+familiar graphical style and made it scriptable from Python. OpenSCAD,
+first released in 2010 and carried by the 3D-printing wave, put a different
+idea in front of a wide audience: the model *is* the script. Its geometry
+was CSG and its output was meshes – the limits of the previous section in
+working form – but it showed a generation of makers that parts can be text,
+with much of what §1.1 describes: parameters, sharing, version control.
 
-**CadQuery**, whose first releases appeared in 2013, joined the two threads:
-parametric models as Python programs on the professional kernel. It
-initially ran on top of FreeCAD, using it purely as a route to the kernel,
-and from the start its stated aims included exact professional exchange
-formats rather than meshes alone. In 2020 it was restructured to address
-the kernel directly, and since 2021 it does so through **OCP**, a set of thin
-Python bindings to OCCT maintained as part of the CadQuery project.
-**build123d**, first released in 2023, is derived from portions of CadQuery and
-extensively refactored into an independent framework; it wraps the same OCP
-bindings. These two are today's options
-for Python code-first CAD: a shared foundation, two different convictions
-about what the API should feel like.
-This book works with CadQuery; Appendix B provides a phrasebook between the
-two.
+**CadQuery**, whose first releases appeared in 2013, joined the two
+threads: parametric models as Python programs on the professional kernel,
+with exact exchange formats rather than meshes alone as a first-class goal.
+It now addresses the kernel through **OCP**, a set of thin Python bindings
+to OCCT maintained as part of the CadQuery project. **build123d**, first
+released in 2023, wraps the same bindings in an independent framework,
+derived in part from CadQuery but organized around different API choices.
+These two are today's main options for Python code-first CAD: a shared
+foundation, two different convictions about what the interface should feel
+like. This book works with CadQuery; Appendix B provides a phrasebook
+between the two.
+
+For quick orientation, the main steps in that line are these:
+
+```{raw:typst}
+#import "table-style.typ": tableStyle, columnStyle
+```
+
+| Year | Project | Why it matters |
+|---|---|---|
+| 1999 | OCCT | professional B-Rep kernel released as open source |
+| 2002 | FreeCAD | graphical parametric CAD on OCCT, scriptable from Python |
+| 2010 | OpenSCAD | popularized the idea that the model itself can be a script |
+| 2013 | CadQuery | Python code-first CAD on a professional kernel |
+| 2023 | build123d | alternative Python interface on the same OCCT/OCP foundation |
 
 ## The Stack Used in This Book
 
@@ -257,8 +266,8 @@ plausibly share – routinely taught to engineers, and home ground for
 scientific computing. The mature open-source bindings to a professional
 kernel happen to exist in Python, as the previous section explained, so the
 choice follows the ecology as much as any abstract merit. Current AI
-assistants are, as it happens, at their strongest in Python as well. What
-Python is not chosen for is speed, and it does not need to be: the geometry
+assistants are, as it happens, at their strongest in Python as well. Python
+is not chosen for speed, and it does not need to be: the geometry
 is computed inside the compiled kernel, and Python orchestrates. Readers
 who use the scientific Python stack will recognize this division of labor.
 
@@ -270,18 +279,30 @@ updated: Chapter 2 contains enough to get started, Appendix A the details.
 
 ## The Plan of This Book, and How to Read It
 
-- The three parts (build, then understand, then engineer); the running
-  threads (battery pack, enclosure generator, fixture, clutch brick, W7-X)
-  with a roadmap figure.
-  % NB: avoid the "→" character in body text – the typst export renders it
-  % as literal "arrow.r".
-- Reading modes: cover-to-cover vs. reference (canonical-home table, Appendix
-  R); note for instructors.
-- Reader-path guidance absorbed from the dissolved adoption section (two or
-  three sentences, no strategy essay): for readers inside an established
-  CAD environment, Chapters 5 and 9 are natural entry points - reading and
-  checking existing models, automating around them; models built as code
-  deliver into existing processes as exchange files. Adoption is gradual by
-  nature; the book is organized so that each part pays for itself.
-- Every example in this book ends with a check, and every function is typed –
-  starting in the next chapter, explained in Chapter 8.
+This book is organized in three parts. Part I teaches the mechanics of
+building models as code: first solids, profiles, parameters, and the basic
+operations that turn them into usable parts. Part II steps back and explains
+what those models are built from: the structure of a boundary
+representation, the mathematics of curves and surfaces, and the techniques
+needed for free-form geometry. Part III treats models as engineering
+artifacts inside a larger workflow: verified, assembled, exported, meshed,
+simulated, and searched by computation. Several examples run through more
+than one chapter – the battery pack, the enclosure generator, the clutch
+brick, the fixture, the free-form W7-X case study – so that individual
+techniques accumulate into larger designs.
+
+The book can be read straight through, but it is also meant to be used by
+reference. Readers who are new to code-first CAD should begin at Chapter 2
+and build in order. Readers who already work inside an established CAD
+environment may find Chapters 5 and 9 natural entry points: one explains how
+to read and reason about the geometry that code produces, the other how such
+models fit into assembly and release processes that already exist. Adoption
+is gradual by nature; the book is organized so that each part pays for
+itself even if the whole stack is not adopted at once.
+
+Two habits matter throughout this book and become more explicit as it
+progresses: checking models under change, and writing code whose structure
+is clear enough to test and compose. In the early chapters those habits
+appear first as small printed measurements, validity checks, and functions
+whose inputs and outputs are stated plainly; later they are made systematic.
+Chapter 8 gathers that practice into a single argument and gives it a name.
