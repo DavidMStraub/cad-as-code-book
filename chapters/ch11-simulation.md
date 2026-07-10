@@ -499,7 +499,7 @@ cooling-plate temperature and the same surrounding air, an honest fit
 for cells spaced apart with nothing but air between them, not a
 statement that no real pack ever needs more.
 
-## A Pipeline, Not a One-Off Analysis
+## Toward a Design Space
 
 The same $K \mathbf{u} = \mathbf{f}$ machinery just solved two
 genuinely different kinds of physics – a structural load and a
