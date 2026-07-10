@@ -1,70 +1,88 @@
 # Searching the Design Space
 
-% Status: first full draft. Ch. 12 per private/book-plan.md §2 (lecture 10,
-% second half - optimization). The lecture material was drafted in haste and
-% audited before writing this chapter; concrete problems found and fixed:
-% - Penalty inconsistency: lecture uses a quadratic penalty for the round-cell
-%   example, then silently switches to a linear penalty for the L-bracket
-%   example with a comment about "constant gradient" but never explains why
-%   the two problems got different treatment. Verified numerically on the
-%   round-cell's own constraint (V_in >= 15000): quadratic (rho=0.1) converges
-%   to V_in=14999.624 - a real, if small, residual violation, never fully
-%   eliminated for finite rho (textbook exterior-penalty behavior). Linear
-%   (rho=1) converges to V_in=15000.0003 - satisfied almost exactly (textbook
-%   exact-penalty behavior). This chapter teaches both, explains why they
-%   differ, rather than picking one per example with no stated reason.
-% - differential_evolution's default polish=True runs a local L-BFGS-B step
-%   using numerically estimated gradients at the end of the search - and the
-%   lecture's own except-Exception-return-inf pattern is exactly what a later
-%   slide warns will break L-BFGS-B's gradient estimate. Verified: reproduces
-%   as a real RuntimeWarning ("invalid value encountered in subtract") on the
-%   lecture's own L-Halter demo (demo_l_halter_optimierung.py) - 3 warnings
-%   per run, though the final result was not visibly corrupted in that
-%   specific case. Not reproduced on this chapter's own sealed_can problem
-%   with polish=True (tested directly, zero warnings) - so the chapter does
-%   not claim it fires on every problem, only names the verified mechanism
-%   and sets polish=False as the safe default throughout.
-% - L-bracket example replaced per book-plan.md's own verdict ("teaching
-%   prop... constraints are visibly invented") and David's explicit design
-%   session: not the book-plan's original "rib-stiffened pack lid" (a new
-%   object with zero prior appearance in the book, introduced solely to keep
-%   the battery thread going - same complaint as the L-bracket, just dressed
-%   differently), but a cell holder - the thin-wall spacer lattice real packs
-%   use (see reference photo David supplied), reusing the book's own
-%   established cells and spacing (Ch. 3/4/9) rather than inventing a part.
-%   David: "We can't do contact mechanics though" - correct, true cell-wall
-%   contact is out of scope; resolved by applying a prescribed outward
-%   pressure directly on the pocket wall as a Neumann boundary condition
-%   (same mechanism as the tension rod's applied force), explicitly framed as
-%   an estimate standing in for unmodeled contact, the same honesty pattern
-%   Ch. 11's thermal constants already used ("illustrative").
-% - Holder has no floor and no step under the cell, per David's own read of
-%   the reference photo and how these parts actually work: real spacers hold
-%   cells purely laterally (friction/spring fingers), vertical support comes
-%   from elsewhere in the pack (base plate, housing, busbars) - modeling a
-%   floor or step would misrepresent the part's actual job.
-% - Verified end to end: sealed_can DE optimum r_outer=13.864, wall=0.500
-%   (pinned to its lower bound), height=27.734, h/r_outer=2.0003 - matches
-%   the lecture's own h=2r result and its own numbers (13.9, 0.5, 27.7) to
-%   the precision the lecture reported. cell_holder DE optimum wall=0.656 mm,
-%   volume=2260.3 mm^3, max von Mises=15.015 MPa against a 15 MPa allowable -
-%   the constraint is genuinely active (binding), not a boundary artifact of
-%   the search. Nelder-Mead reliability checked directly on sealed_can from
-%   four starting points: two reach the true optimum (f=1747.3), two do not
-%   (f=14153.3 and f=1801.4, the second starting point converging to a
-%   different, ~3% worse local optimum with height pinned to its lower
-%   bound instead) - a real, reproduced ~50% failure rate on a 3-variable
-%   problem, not an assumed one.
+% Status: second full draft. Ch. 12 per private/book-plan.md §2 (lecture 10,
+% second half - optimization). First draft used the source lecture's own
+% round-cell material-minimization example (h=2r) as the anchor for design
+% variables/objective/constraints, penalties, and algorithm choice - four
+% sections built around it. David, on reading that draft: the lecture's own
+% round-cell example is "shit," "used only due to last minute preparation,"
+% and should never have been reached for - correcting book-plan.md's own
+% audit table, which still listed it "Keep - textbook-grade" and is what led
+% me there. That verdict is now stale; book-plan.md needs updating to match.
+% Also flagged in the same pass: a stray "than the lecture material this
+% chapter is based on gave it credit for" sentence, a meta-reference to the
+% book's own source material that has no business in reader-facing prose
+% regardless of the point it was attached to; a vacuous transition sentence
+% ("two different shapes... behave differently, not interchangeably"); the
+% penalty section presented two penalty types side by side with no real
+% stake attached, reading as confusing rather than motivating; the algorithm
+% section restated lecture facts about Nelder-Mead/DE without explaining the
+% actual mechanism either one uses; the reliability table felt bolted onto
+% the exercise. All rewritten below, anchored on a genuinely different
+% example instead of a fix to the same one.
+%
+% New anchor: a compression strut sized against Euler buckling, David's own
+% suggestion after rejecting a packing-density alternative as "too trivial...
+% and discrete." Verified end to end, exact (not thin-wall-approximated)
+% tube cross-section and moment of inertia, aluminum (E=70e3 MPa),
+% sigma_allow=150 MPa, P=5000 N, L=1200 mm, K=1.0 (pinned-pinned):
+% - DE optimum: r_outer=22.428 mm, wall=0.300 mm (pinned to its own lower
+%   manufacturing bound), area=41.994 mm^2, P_cr=5000.00 N (buckling exactly
+%   binding), stress=119.07 MPa against a 150 MPa allowable (yield has real
+%   margin, ~1.26x) - mass 136.1 g for the 1200 mm strut. Confirms the
+%   classical result this chapter states in prose: a slender strut fails by
+%   buckling well before the material itself would yield.
+% - Quadratic-vs-linear penalty, run on the strut's own buckling constraint
+%   (not an abstract aside): quadratic penalty at a reasonable-looking
+%   rho=2e-6 converges to P_cr=4215.8 N against the required 5000 N - a
+%   15.7% shortfall, i.e. an "optimized" strut that is not actually safe to
+%   build. Increasing rho by 1000x (to 2e-3) only shrinks the shortfall to
+%   0.01% - smaller, never gone, the textbook asymptotic behavior of an
+%   exterior penalty. Linear penalty at rho=20 converges to P_cr=5000.00 N
+%   exactly (shortfall 0.0000). Real, safety-relevant stakes replace the
+%   round-cell's own ~0.0025%-shortfall version of the same point.
+% - Nelder-Mead reliability, checked from ten starting points spread across
+%   the bounds: six reach the true optimum (f=41.99-42.00); the other four
+%   all converge to the exact same second local optimum, r_outer=3.26 mm,
+%   wall=3.10-3.19 mm, f=132.48 - not four different failures, one specific
+%   wrong basin wide enough to catch two-fifths of a reasonable spread of
+%   guesses. More interesting and more honest than the round-cell's own
+%   scattered-failure table.
+% - Short-strut check (Try It material): the same problem at L=300 mm
+%   instead of 1200 mm converges to a *smaller* cross-section, 33.33 mm^2,
+%   with yield exactly binding (stress=150.00 MPa) and buckling comfortably
+%   satisfied (P_cr=23105 N against 5000 required) - the short-column /
+%   long-column transition every mechanics-of-materials course covers,
+%   reproduced by the search itself rather than asserted.
+% - polish=True + inf interaction: same verified finding as the first draft
+%   (reproduces on the lecture's own L-Halter demo, not reproduced on this
+%   chapter's own strut objective directly) - kept, not specific to which
+%   worked example carries it.
+% Cell holder section (second worked example, FEM-in-the-loop) untouched by
+% this revision - not part of David's complaint, only its own opening
+% transition sentence updated to reference the strut instead of the can.
 
-Every part this book has built so far was described by numbers the reader
-chose: a wall thickness typed into a function call, a fillet radius picked
-because it looked right. Chapter 9's own release pipeline already showed
-that a parametric function can be called with more than one set of
-numbers – a loop over named variants, not a single fixed part. This
-chapter's subject is having something else choose them: searching a
-range of possible parameter values for the one that minimizes a real,
-computable quantity, rather than checking candidates one at a time by
-hand.
+Every part this book has built so far was described by numbers the
+reader chose: a wall thickness typed into a function call, a fillet
+radius picked because it looked right. Chapter 9's own release
+pipeline already showed that a parametric function can be called with
+more than one set of numbers – a loop over named variants, not a
+single fixed part. Choosing well by hand works for two or three
+numbers at a time; it stops working long before a real part's own
+count of free dimensions, each pulling the design a different
+direction at once – a thinner wall saves mass but risks failure, a
+shorter part saves material but changes how the whole thing fails, and
+which variable actually decides the outcome is rarely obvious until it
+is checked. That tension is why optimization is a standing part of the
+mechanical design toolchain rather than a novelty: a gram removed from
+an aircraft or a satellite is fuel or payload gained for the vehicle's
+entire service life, and the same trade governs a battery pack, where
+every gram of supporting structure competes directly against a gram of
+cells that could have occupied its place instead. This chapter's
+subject is having a program navigate that trade for a real part –
+searching a range of possible parameter values for the one that
+minimizes a real, computable quantity, rather than checking candidates
+one at a time by hand.
 
 ## Design Variables, Objective, Constraints
 
@@ -76,114 +94,119 @@ Written out:
 
 $$\min_{\mathbf{x}} f(\mathbf{x}) \quad \text{subject to} \quad g_i(\mathbf{x}) \leq 0, \quad x_j^{\text{lb}} \leq x_j \leq x_j^{\text{ub}}.$$
 
-A concrete version of this grounds the rest of the chapter: a sealed
-cylindrical can – the same shape as Chapter 8's own `cell_can`, with
-top and bottom caps added, since a fully closed can is what makes this
-particular problem well posed, as the next section shows.
+A concrete version of this grounds the rest of the chapter: a
+**strut** – a slender tube loaded in compression, the kind of support
+post that holds a housing or an instrument off whatever it mounts to.
+A strut can fail two different ways, not one: the material itself can
+yield under direct compressive stress, or, well before that stress is
+reached, the whole tube can suddenly bow sideways and **buckle** – the
+governing failure mode of anything long and thin loaded along its own
+axis, and the reason sizing a strut is never just a stress
+calculation.
 
 ```python
 from cadquery import Solid
 from cadquery import func as cf
 
 
-def sealed_can(r_outer: float, wall: float, height: float) -> Solid:
-    if not 0 < wall < r_outer or height <= 2 * wall:
-        raise ValueError("invalid can parameters")
-    outer = cf.cylinder(d=2 * r_outer, h=height)
-    inner = cf.cylinder(d=2 * (r_outer - wall), h=height - 2 * wall).translate((0, 0, wall))
-    can = outer - inner
-    assert isinstance(can, Solid)
-    return can
+def strut(r_outer: float, wall: float, length: float) -> Solid:
+    if not 0 < wall < r_outer:
+        raise ValueError(f"wall must be between 0 and {r_outer}, got {wall}")
+    outer = cf.cylinder(d=2 * r_outer, h=length)
+    inner = cf.cylinder(d=2 * (r_outer - wall), h=length + 2).translate((0, 0, -1))
+    tube = outer - inner
+    assert isinstance(tube, Solid)
+    return tube
 ```
 
-`r_outer`, `wall`, and `height` are this problem's design variables;
-the material volume `sealed_can(...).Volume()` is what gets minimized;
-and the can has to hold at least a fixed inner volume – a battery cell
-of a certain size, a fixed dose of a chemical, whatever the can is
-actually for – which is this problem's one constraint.
+`r_outer` and `wall` are this problem's design variables; `length` is
+fixed by wherever the strut has to reach, not something the optimizer
+gets to change. The two failure modes above translate directly into
+this problem's constraints, both closed-form – no mesh or solver
+needed yet:
+
+$$P_{\text{cr}} = \frac{\pi^2 E I}{(KL)^2} \geq P, \qquad \sigma = \frac{P}{A} \leq \sigma_{\text{allow}},$$
+
+where $I = \tfrac{\pi}{4}\left(r_\text{outer}^4 - r_\text{inner}^4\right)$
+and $A = \pi\left(r_\text{outer}^2 - r_\text{inner}^2\right)$ are the
+tube's own cross-sectional moment of inertia and area, $P$ the applied
+compressive load, $E$ the material's stiffness, and $K$ a factor set
+by how the strut's own two ends are held – $K=1$ for a strut free to
+rotate at both ends, the case this chapter uses throughout. The
+objective is the cross-section $A$ itself: minimizing it minimizes the
+strut's own mass for a fixed length, since mass is just $A$ times
+length times density.
 
 `scipy.optimize` expects one fixed calling convention regardless of
 which algorithm ends up using it: a function taking a single NumPy
-array and returning a single scalar, never raising:
+array and returning a single scalar, never raising. Turning the two
+constraints above into something that convention can actually search
+against needs one more idea: a **penalty** – a term added to the
+objective that grows the moment a constraint is violated, since the
+optimizer has no other way to compare a design that fails against one
+that does not.
+
+The obvious first attempt squares the violation, $p(\mathbf{x}) =
+\max(0, g(\mathbf{x}))^2 \cdot \rho$, and for a soft preference that
+would be fine. For a real safety margin it is not: the derivative of
+$g^2$ is $2g$, which is exactly zero at $g=0$, so right at the
+constraint boundary the penalty pushes back with no force at all, and
+the optimizer, feeling nothing stopping it there, settles just inside
+the infeasible side rather than exactly on the feasible one. Run on
+the strut's own buckling constraint, with a penalty weight that looks
+entirely reasonable on paper, that is not a rounding error: the search
+converges to a strut good for `4215.8` N of buckling resistance
+against a required `5000` N – a `15.7`% shortfall, an "optimized"
+strut that is not actually safe to build. Making the same penalty
+weight a thousand times larger only shrinks the shortfall to `0.01`% –
+smaller, never gone, exactly the asymptotic behavior that vanishing
+derivative predicts.
+
+The fix is a penalty whose slope never vanishes:
+
+$$p(\mathbf{x}) = \max(0,\, g(\mathbf{x})) \cdot \rho.$$
+
+Linear rather than quadratic, with a constant slope of $\rho$
+everywhere, including right at the boundary, so once $\rho$ is large
+enough the optimizer's own minimum lands exactly on the constraint
+instead of drifting inside it. The same search, the same weight scale,
+now converges to a strut good for exactly `5000.0` N – no shortfall at
+all. Every constraint in this chapter is a real physical limit a built
+part either meets or does not, so every objective below uses this
+linear form:
 
 ```python
 import numpy as np
 
-V_MIN = 15_000.0  # mm^3, the can's own required inner volume
+E, SIGMA_ALLOW = 70e3, 150.0  # MPa, aluminum with margin below yield
+P, LENGTH, K = 5000.0, 1200.0, 1.0  # N, mm, pinned-pinned
 
 
-def objective(x: np.ndarray) -> float:
-    r_outer, wall, height = x
+def section(r_outer: float, wall: float) -> tuple[float, float]:
+    r_inner = r_outer - wall
+    area = np.pi * (r_outer**2 - r_inner**2)
+    moment = np.pi / 4 * (r_outer**4 - r_inner**4)
+    return area, moment
+
+
+def objective(x: np.ndarray, rho: float = 20.0) -> float:
+    r_outer, wall = x
     try:
-        v_inner = np.pi * (r_outer - wall) ** 2 * (height - 2 * wall)
-        ...
-        return sealed_can(r_outer, wall, height).Volume()
+        area, moment = section(r_outer, wall)
+        p_crit = np.pi**2 * E * moment / (K * LENGTH) ** 2
+        stress = P / area
+        penalty = max(0.0, P - p_crit) * rho / 1000 + max(0.0, stress - SIGMA_ALLOW) * rho
+        return strut(r_outer, wall, LENGTH).Volume() / LENGTH + penalty
     except Exception:
         return float("inf")
 ```
 
 `x` carries no variable names by the time the optimizer sees it – just
-three numbers in the order this function agrees to unpack them in –
-and the `try`/`except` turns any invalid combination the search
-happens to propose into a value every algorithm can compare against
-every other, rather than a crash that stops the whole run.
-
-## Handling Constraints Honestly
-
-The `...` above is where the volume constraint actually lives, and how
-it is written matters more than the lecture material this chapter is
-based on gave it credit for. The standard approach adds a **penalty**:
-a term that grows the moment the constraint is violated, so the
-optimizer is steered back toward feasibility instead of crashing into
-it. Two different shapes for that penalty behave differently, not
-interchangeably:
-
-$$p_{\text{quad}} = \max(0,\, g(\mathbf{x}))^2 \cdot \rho, \qquad p_{\text{lin}} = \max(0,\, g(\mathbf{x})) \cdot \rho.$$
-
-The quadratic penalty's own slope is zero exactly at the constraint
-boundary – $\tfrac{d}{dg}g^2 = 2g$, which vanishes at $g=0$ – so the
-optimizer feels no push to cross that boundary from the feasible side
-even when it is still very close to it; only as $\rho \to \infty$
-does the unconstrained minimum of "objective plus penalty" approach
-the true constrained one. The linear penalty's slope is $\rho$
-everywhere, including right at the boundary, so once $\rho$ is large
-enough the optimizer's own minimum lands exactly on the constraint
-rather than approaching it asymptotically. Run on `sealed_can`'s own
-constraint, the difference is a real, measured number, not a
-theoretical nuance:
-
-```python
-def objective_quadratic(x: np.ndarray, rho: float = 0.1) -> float:
-    r_outer, wall, height = x
-    try:
-        v_inner = np.pi * (r_outer - wall) ** 2 * (height - 2 * wall)
-        penalty = max(0.0, V_MIN - v_inner) ** 2 * rho
-        return sealed_can(r_outer, wall, height).Volume() + penalty
-    except Exception:
-        return float("inf")
-
-
-def objective_linear(x: np.ndarray, rho: float = 1.0) -> float:
-    r_outer, wall, height = x
-    try:
-        v_inner = np.pi * (r_outer - wall) ** 2 * (height - 2 * wall)
-        penalty = max(0.0, V_MIN - v_inner) * rho
-        return sealed_can(r_outer, wall, height).Volume() + penalty
-    except Exception:
-        return float("inf")
-```
-
-Optimizing each against the same bounds and starting conditions, the
-quadratic penalty settles at an inner volume of `14999.624` mm³ – a
-small, real, permanent shortfall against the required `15000` – while
-the linear penalty settles at `15000.0003` mm³, satisfied for all
-practical purposes. Neither is "wrong": the quadratic penalty is the
-right tool when the objective needs to stay smooth everywhere, its own
-zero-gradient boundary a feature rather than a bug for
-gradient-sensitive algorithms; the linear penalty is the right tool
-when the constraint has to actually hold. This chapter uses the linear
-form throughout, because every constraint below is a real physical
-limit, not a soft preference.
+two numbers in the order this function agrees to unpack them in – and
+`strut(...).Volume() / LENGTH` recovers the same cross-sectional area
+`section` already computed analytically, this time from the real solid
+rather than a formula, the same cross-check in miniature Chapter 8
+built into every one of its own functions.
 
 ## Choosing an Algorithm
 
@@ -195,30 +218,46 @@ means something at every point; **derivative-free** methods only ever
 compare function values against each other, which is exactly what a
 CAD objective can actually promise.
 
-**Nelder-Mead** walks a small simplex of trial points downhill,
-cheaply, but only ever finds the nearest local minimum to wherever it
-started – a real risk, not a theoretical one, checked directly on
-`sealed_can` from four different starting points:
+**Nelder-Mead** keeps a small **simplex** of trial points – three
+points for this two-variable problem, one more than the number of
+design variables – and repeatedly replaces the worst of them: reflect
+it through the center of the others, and if that reflected point is
+better still, push further out in the same direction; if not, pull
+back toward the center instead. That is cheap, a handful of
+evaluations per step, but it only ever moves toward whatever is better
+*nearby* – nothing in the mechanism ever looks somewhere else in the
+search space entirely, so wherever the simplex first starts descending
+decides which valley it can ever find, right or wrong.
+
+Checked directly on the strut, from ten different starting points
+spread across its own bounds, that risk is not theoretical: six reach
+the true optimum, area `41.99`–`42.00` mm². The other four all
+converge to the exact same wrong point instead – `r_outer=3.26` mm,
+`wall=3.10`–`3.19` mm, area `132.5` mm² – not four different mistakes,
+one specific second valley wide enough to catch two-fifths of a
+reasonable spread of starting guesses:
 
 ```{raw:typst}
 #import "table-style.typ": tableStyle, columnStyle
 ```
 
-| Start $(r_\text{outer}, \text{wall}, h)$ | Result | Volume |
-|---|---|---|
-| $(12, 2, 65)$ | true optimum | `1747.3` |
-| $(8, 0.6, 30)$ | true optimum | `1747.4` |
-| $(6, 4, 25)$ | wrong – stuck near infeasible | `14153.3` |
-| $(24, 0.6, 100)$ | wrong – different local optimum | `1801.4` |
+| Start $(r_\text{outer}, \text{wall})$ | Converges to |
+|---|---|
+| $(10, 2)$, $(5, 0.5)$, $(35, 1)$ | true optimum, area $\approx 42.0$ |
+| $(30, 4)$, $(15, 4.5)$, $(25, 3.5)$ | same wrong valley, area $\approx 132.5$ |
 
-Half of these four starting points miss the true optimum entirely, on
-a problem with only three design variables. **Differential evolution**
-trades that risk for cost: it evolves an entire population of
-candidate points across the whole bounded search space at once, with
-no starting guess required, at the price of far more function
-evaluations – population size times generations, often in the
-thousands – which turns prohibitively expensive once a single
-evaluation takes more than a fraction of a second.
+**Differential evolution** trades that risk for cost. Instead of one
+simplex, it keeps an entire *population* of candidate points scattered
+across the whole bounded search space from the start; each generation,
+it builds new candidates by combining existing ones – take two
+population members, scale their difference, add it to a third – and
+keeps whichever version, old or new, scores better. Because the
+starting population already covers the space rather than sitting in
+one place, a better valley elsewhere is something the population can
+simply already have a foothold in, not something the search has to
+stumble into. That coverage costs evaluations – population size times
+generations, often in the thousands – prohibitively expensive once a
+single evaluation takes more than a fraction of a second.
 
 One further interaction is worth naming plainly.
 `differential_evolution` defaults to `polish=True`, which runs a
@@ -228,62 +267,59 @@ objective at points offset by a tiny step. An objective that returns
 `float("inf")` anywhere near that best result collapses that gradient
 estimate outright: `inf` minus a finite number is `inf`, not a usable
 slope. This reproduces as a genuine `RuntimeWarning` on some bounded
-problems – confirmed on this chapter's own earlier draft of the
-cell-holder objective below – though not on every problem that uses
-the `inf`-on-failure pattern; whether it fires depends on how close
-the polish step's own probes land to an infeasible or invalid region.
-Since there is no way to know that in advance, every optimizer call in
-this chapter sets `polish=False` and relies on the linear penalty
-above to do the constraint-enforcing work instead.
+problems – confirmed on a lecture-style objective built the same way –
+though not on every problem that uses the `inf`-on-failure pattern;
+whether it fires depends on how close the polish step's own probes
+land to an infeasible or invalid region. Since there is no way to know
+that in advance, every optimizer call in this chapter sets
+`polish=False` and relies on the linear penalty above to do the
+constraint-enforcing work instead.
 
-## The Optimal Can: Height Equals Twice the Radius
-
-With a linear penalty and `differential_evolution`, `sealed_can`'s own
-material-minimization problem is three lines:
+With that fixed, the strut's own optimization is a few lines:
 
 ```python
 from scipy.optimize import differential_evolution
 
-bounds = [(5, 25), (0.5, 5), (20, 120)]  # r_outer, wall, height
+bounds = [(3, 40), (0.3, 5)]  # r_outer, wall
 result = differential_evolution(
-    objective_linear, bounds, seed=42, maxiter=300, tol=1e-6, polish=False
+    objective, bounds, seed=42, maxiter=1000, tol=1e-10, popsize=25, polish=False
 )
-r_outer, wall, height = result.x
+r_outer, wall = result.x
 ```
 
-The search converges to `r_outer=13.86`, `wall=0.50`, `height=27.73` –
-material volume `1747.3` mm³, a third less than the `2534.7` mm³ a
-1 mm wall at the same starting radius would need. `wall` sits exactly
-on its own lower bound: thinner is always better for material use
-alone, so the search pushes it as far as the bound allows and lets
-the other two variables do the rest of the work. `height` and
-`r_outer` land in a fixed ratio, `height / r_outer = 2.00`, height
-equal to twice the radius, equal to the can's own diameter – the
-classical result for minimizing a cylinder's surface area at a fixed
-volume, found here by search rather than by calculus, and checkable
-by the reader the same way: multiply `wall` back out and confirm the
-inner volume comes out at `15000.0003`, no more elaborate a check than
-Chapter 8's own.
+The search converges to `r_outer=22.43` mm, `wall=0.30` mm – a
+cross-section of `41.99` mm², a strut of about `136` g over its
+`1200` mm length. `wall` sits exactly on its own lower manufacturing
+bound: thinner is always better once the buckling constraint is
+satisfied, so the search pushes it as far as that bound allows and
+lets `r_outer` do the rest of the work. Checking the result the same
+way Chapter 8 would: buckling resistance comes out at `5000.0` N,
+exactly the required load, while the resulting stress is `119.1` MPa
+against a `150` MPa allowable – real margin, not zero. Buckling, not
+material strength, is what actually decided this strut's own
+thickness – the classical result for a slender column, confirmed here
+by search rather than assumed.
 
 :::{figure} ../figures/generated/ch12-convergence.png
 :width: 70%
 
-Material volume against iteration, recorded with a `callback` passed
-to `differential_evolution`. The steep early drop is the population
-finding the feasible region at all; the long flat tail is refinement
-within it – the shape any convergence plot should have, and the
-reason to always look at one rather than trust a single final number.
+Cross-sectional area against iteration, recorded with a `callback`
+passed to `differential_evolution`. The steep early drop is the
+population finding the feasible region at all; the long flat tail is
+refinement within it – the shape any convergence plot should have, and
+the reason to always look at one rather than trust a single final
+number.
 :::
 
 ## A Cell Holder, Optimized Against Its Own Simulation
 
-The can's own objective was cheap enough to evaluate thousands of
-times because it never left analytic geometry. A **cell holder** – the
-thin-walled lattice that spaces battery cells apart in a real pack,
-gripping each one by friction rather than resting it on anything –
-poses a genuinely different problem: how thin can its walls go before
-the cells' own outward push cracks them, a question with no closed
-form, answerable only by Chapter 11's own simulation pipeline.
+The strut's own objective was cheap enough to evaluate thousands of
+times because it never left closed-form formulas. A **cell holder** –
+the thin-walled lattice that spaces battery cells apart in a real
+pack, gripping each one by friction rather than resting it on anything
+– poses a genuinely different problem: how thin can its walls go
+before the cells' own outward push cracks them, a question with no
+closed form, answerable only by Chapter 11's own simulation pipeline.
 
 ```python
 R_CELL, CLEARANCE, SPACING, HOLDER_H = 9.0, 0.3, 24.0, 5.0
@@ -326,7 +362,7 @@ from skfem import Basis, ElementVector, ElementTetP1, FacetBasis, LinearForm, co
 from skfem.io.meshio import from_meshio
 from skfem.models.elasticity import lame_parameters, linear_elasticity, linear_stress, sym_grad
 
-E, NU = 2100.0, 0.35  # illustrative injection-molded plastic, MPa
+E_HOLDER, NU = 2100.0, 0.35  # illustrative injection-molded plastic, MPa
 PRESSURE = 1.0  # MPa, illustrative estimate standing in for cell contact
 
 
@@ -343,9 +379,9 @@ def max_stress(wall: float, lc: float = 1.5) -> tuple[float, float]:
     cadmesh = cadgmsh.mesh(holder, dim=3, lc=lc, physical={"bottom": bottoms, "pockets": pockets})
     mesh = from_meshio(cadmesh)
 
-    lam, mu = lame_parameters(E, NU)
+    lam, mu = lame_parameters(E_HOLDER, NU)
     basis = Basis(mesh, ElementVector(ElementTetP1()))
-    K = linear_elasticity(lam, mu).assemble(basis)
+    K_mat = linear_elasticity(lam, mu).assemble(basis)
 
     fb = FacetBasis(mesh, ElementVector(ElementTetP1()), facets=mesh.boundaries["pockets"])
 
@@ -355,7 +391,7 @@ def max_stress(wall: float, lc: float = 1.5) -> tuple[float, float]:
 
     f = pressure_load.assemble(fb)
     fixed_dofs = basis.get_dofs(mesh.boundaries["bottom"]).all()
-    u = solve(*condense(K, f, D=fixed_dofs))
+    u = solve(*condense(K_mat, f, D=fixed_dofs))
 
     eps = sym_grad(basis.interpolate(u))
     sigma = linear_stress(lam, mu)(eps)
@@ -374,8 +410,8 @@ at every point on the pocket, whichever way that wall happens to
 curve. `bottoms` stays fixed, standing in for whatever the holder
 rests against; nothing else is constrained.
 
-The objective wraps `max_stress` the same way `sealed_can`'s own
-objective wrapped `.Volume()` – minimize material, penalize the one
+The objective wraps `max_stress` the same way the strut's own
+objective wrapped `section` – minimize material, penalize the one
 constraint that matters, a maximum stress the plastic can actually
 survive with a safety margin built in:
 
@@ -405,7 +441,7 @@ penalty weight in this chapter, chosen relative to what it is
 penalizing rather than copied from one problem to the next. Each
 evaluation costs about a second – a real mesh, a real solve – so the
 bounded, population-limited search above runs in under four minutes
-rather than the round can's own few seconds.
+rather than the strut's own few seconds.
 
 The result: `wall=0.656` mm, material volume `2260.3` mm³, maximum von
 Mises stress `15.015` MPa – landing almost exactly on the `15.0` MPa
@@ -456,18 +492,19 @@ edges. A model that was code from its very first line was always
 already there.
 
 :::{note} Try It
-- Change `V_MIN` on the sealed can to `30_000` and rerun the
-  optimization – confirm `height / r_outer` still comes out at `2.0`,
-  the ratio this problem's own geometry fixes regardless of how much
-  volume it has to hold.
+- Rerun the strut at `LENGTH=300` instead of `1200` – confirm the
+  optimizer now settles on a *smaller* cross-section with the yield
+  constraint exactly binding and real margin left on buckling, the
+  opposite of the 1200 mm case: a short, stubby strut fails by
+  crushing, a long, slender one by buckling, and which regime a given
+  design sits in is not always obvious in advance.
 - Run Nelder-Mead on the cell holder from a few different starting
   points between `0.3` and `3.0` – with only one design variable,
-  confirm it converges reliably every time, unlike the three-variable
-  can above.
-- Swap `objective_linear` for `objective_quadratic` in the holder's own
-  optimization and compare the resulting maximum stress against
-  `SIGMA_MAX` – confirm the same residual violation this chapter
-  measured on the can shows up here too.
+  confirm it converges reliably every time, unlike the strut above.
+- Rewrite the holder's own penalty as a quadratic one and rerun –
+  confirm the same silent shortfall this chapter measured on the
+  strut's buckling constraint shows up here too, now against a real
+  stress limit instead of a load.
 - Double `PRESSURE` on the cell holder and rerun – confirm the optimal
   `wall` grows, and check by how much against the roughly linear
   relationship between applied pressure and resulting stress that
