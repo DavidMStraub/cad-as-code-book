@@ -35,3 +35,4 @@ project:
     - file: chapters/ch08-models-you-can-trust.md
     - file: chapters/ch09-assemblies-and-release-pipelines.md
     - file: chapters/ch10-from-solids-to-meshes.md
+    - file: chapters/ch11-simulation.md
