@@ -36,3 +36,4 @@ project:
     - file: chapters/ch09-assemblies-and-release-pipelines.md
     - file: chapters/ch10-from-solids-to-meshes.md
     - file: chapters/ch11-simulation.md
+    - file: chapters/ch12-searching-the-design-space.md
