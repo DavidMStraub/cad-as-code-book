@@ -1,6 +1,7 @@
 # Build output
 _build/
 main.pdf
+main-pdfa.pdf
 
 # Private files
 private/
