@@ -37,8 +37,8 @@ frame – its own x and y directions are the plane's, and when it is later
 extruded or revolved, the direction of that operation is measured against
 the plane's normal. For everything up to the last section of this chapter,
 `Plane.XY()` is the only plane needed, and it works exactly as global x and
-y already do; the richer uses of `Plane` appear once there is a reason for
-them.
+y already do. The richer uses of `Plane` appear once there is a reason for
+them; first, it is enough to see a profile turned into a solid.
 
 ## Extrude: A Profile Pushed Straight Up
 
@@ -56,12 +56,14 @@ housing = cf.extrude(profile, (0, 0, 91))
 centered on the origin, lying in the XY plane – a closed chain of edges
 called a **wire**, not yet a surface. `face` turns that outline into the
 flat surface it encloses, which is what actually makes it a profile: a
-face, not a wire, is what `extrude` and `revolve` both expect. `extrude` itself takes a profile and a *direction* to push it
-in – a vector, not a plain number – so `(0, 0, 91)` pushes the profile 91
+face, not a wire, is what `extrude` and `revolve` both expect.
+
+`extrude` itself takes a profile and a *direction* to push it in – a
+vector, not a plain number – so `(0, 0, 91)` pushes the profile 91
 millimeters straight up in z; a tilted vector would push it off at an
-angle instead, producing a slanted prism rather than a straight one. (A
+angle instead, producing a slanted prism rather than a straight one. A
 third, optional argument, `both`, extrudes symmetrically in both
-directions from the profile's own plane instead of only forward from it.)
+directions from the profile's own plane instead of only forward from it.
 
 The result is a box, 27 by 148 by 91 millimeters: the dimensions of a real
 lithium-ion battery cell of the 100-amp-hour class, in the format called
@@ -109,12 +111,14 @@ wire, the same kind of outline `rect` produces; the last point repeats the
 first to close the loop, exactly as it must, or the result is an open
 outline `face` cannot turn into a surface. Curved segments – arcs, splines
 – close into faces the same way, once joined into a single closed outline;
-the profile a face is built from need not be straight-edged at all. Passed to `extrude` exactly as the rectangle was,
-this notched outline would produce a housing with a notch running its
-full height, which no single primitive shape could produce directly. The
-housing built for this chapter does not need one, and keeps the plain
-rectangular profile; the notched version above exists only to show that
-extrude's real domain is broader than a box.
+the profile a face is built from need not be straight-edged at all.
+
+Passed to `extrude` exactly as the rectangle was, this notched outline
+would produce a housing with a notch running its full height, which no
+single primitive shape could produce directly. The housing built for this
+chapter does not need one, and keeps the plain rectangular profile; the
+notched version above exists only to show that extrude's real domain is
+broader than a box.
 
 ## A Plane Derived from a Face
 
@@ -165,17 +169,19 @@ a further offset *measured in that plane's own local coordinates*: 48.5
 millimeters along the plane's own y-direction, which, for a flat,
 upward-facing plane like this one, is the same as global y, but would
 follow the plane's own tilt if the face it came from were tilted instead.
+
 Composing the two locations this way, rather than passing the offset
-straight into `Location`'s own constructor alongside the plane, matters:
-that single-step form discards the plane's origin entirely and places the
+straight into `Location`'s own constructor alongside the plane, matters.
+That single-step form discards the plane's origin entirely and places the
 result at the raw offset in global coordinates – exactly the kind of
 mistake that is easy to make and easy to miss, since the code still runs
-without error. The two terminals land 97 millimeters apart, symmetric
-about the housing's center, sitting on top of it rather than embedded in
-it or floating above it – and every one of these facts remains true no
-matter what the
-housing's own dimensions later become. This is **design intent** again,
-in a new form: the terminals' construction records *where they belong
+without error.
+
+The two terminals land 97 millimeters apart, symmetric about the housing's
+center, sitting on top of it rather than embedded in it or floating above
+it – and every one of these facts remains true no matter what the
+housing's own dimensions later become. This is **design intent** again, in
+a new form: the terminals' construction records *where they belong
 relative to the housing*, not a pair of numbers that happened to be
 correct once.
 
@@ -191,7 +197,7 @@ A profile can also become a solid by turning, rather than pushing.
 **Revolve** sweeps a profile through a full circle – or part of one –
 around an axis, and the result is exactly the kind of rotationally
 symmetric shape a lathe produces: a bolt, a bottle, a cylindrical battery
-cell. The profile revolve needs looks nothing like the ones used for
+cell. The profile used for revolve looks nothing like the profiles used for
 extrude so far. It is not the shape being built, but a **half** of the
 shape's cross-section – the outline traced by a single straight line from
 the axis outward to the object's surface and back, at one fixed angle.
@@ -299,9 +305,12 @@ the same sequence. This is the same choice a much older piece of
 vocabulary names: an **extrinsic** Euler angle is one measured about fixed
 axes, as here; an *intrinsic* Euler angle is measured about axes that
 rotate along with the object being turned, which is not what `moved` does.
-Given together, the three combine as three fixed-axis rotations applied in
-a set order – first about x, then y, then z – which as a single matrix
-acting on a point is the product
+
+That fixed-axis convention is the first point to keep hold of. The second
+is that, when all three angles are given together, they do not form an
+unordered bundle of turns. They combine as three fixed-axis rotations
+applied in a set order – first about x, then y, then z – which as a single
+matrix acting on a point is the product
 
 $$R = R_z(rz) \, R_y(ry) \, R_x(rx),$$
 
