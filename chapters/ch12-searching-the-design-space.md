@@ -1,88 +1,79 @@
 # Searching the Design Space
 
-% Status: second full draft. Ch. 12 per private/book-plan.md §2 (lecture 10,
-% second half - optimization). First draft used the source lecture's own
-% round-cell material-minimization example (h=2r) as the anchor for design
-% variables/objective/constraints, penalties, and algorithm choice - four
-% sections built around it. David, on reading that draft: the lecture's own
-% round-cell example is "shit," "used only due to last minute preparation,"
-% and should never have been reached for - correcting book-plan.md's own
-% audit table, which still listed it "Keep - textbook-grade" and is what led
-% me there. That verdict is now stale; book-plan.md needs updating to match.
-% Also flagged in the same pass: a stray "than the lecture material this
-% chapter is based on gave it credit for" sentence, a meta-reference to the
-% book's own source material that has no business in reader-facing prose
-% regardless of the point it was attached to; a vacuous transition sentence
-% ("two different shapes... behave differently, not interchangeably"); the
-% penalty section presented two penalty types side by side with no real
-% stake attached, reading as confusing rather than motivating; the algorithm
-% section restated lecture facts about Nelder-Mead/DE without explaining the
-% actual mechanism either one uses; the reliability table felt bolted onto
-% the exercise. All rewritten below, anchored on a genuinely different
-% example instead of a fix to the same one.
-%
-% New anchor: a compression strut sized against Euler buckling, David's own
-% suggestion after rejecting a packing-density alternative as "too trivial...
-% and discrete." Verified end to end, exact (not thin-wall-approximated)
-% tube cross-section and moment of inertia, aluminum (E=70e3 MPa),
-% sigma_allow=150 MPa, P=5000 N, L=1200 mm, K=1.0 (pinned-pinned):
-% - DE optimum: r_outer=22.428 mm, wall=0.300 mm (pinned to its own lower
-%   manufacturing bound), area=41.994 mm^2, P_cr=5000.00 N (buckling exactly
-%   binding), stress=119.07 MPa against a 150 MPa allowable (yield has real
-%   margin, ~1.26x) - mass 136.1 g for the 1200 mm strut. Confirms the
-%   classical result this chapter states in prose: a slender strut fails by
-%   buckling well before the material itself would yield.
-% - Quadratic-vs-linear penalty, run on the strut's own buckling constraint
-%   (not an abstract aside): quadratic penalty at a reasonable-looking
-%   rho=2e-6 converges to P_cr=4215.8 N against the required 5000 N - a
-%   15.7% shortfall, i.e. an "optimized" strut that is not actually safe to
-%   build. Increasing rho by 1000x (to 2e-3) only shrinks the shortfall to
-%   0.01% - smaller, never gone, the textbook asymptotic behavior of an
-%   exterior penalty. Linear penalty at rho=20 converges to P_cr=5000.00 N
-%   exactly (shortfall 0.0000). Real, safety-relevant stakes replace the
-%   round-cell's own ~0.0025%-shortfall version of the same point.
-% - Nelder-Mead reliability, checked from ten starting points spread across
-%   the bounds: six reach the true optimum (f=41.99-42.00); the other four
-%   all converge to the exact same second local optimum, r_outer=3.26 mm,
-%   wall=3.10-3.19 mm, f=132.48 - not four different failures, one specific
-%   wrong basin wide enough to catch two-fifths of a reasonable spread of
-%   guesses. More interesting and more honest than the round-cell's own
-%   scattered-failure table.
-% - Short-strut check (Try It material): the same problem at L=300 mm
-%   instead of 1200 mm converges to a *smaller* cross-section, 33.33 mm^2,
-%   with yield exactly binding (stress=150.00 MPa) and buckling comfortably
-%   satisfied (P_cr=23105 N against 5000 required) - the short-column /
-%   long-column transition every mechanics-of-materials course covers,
-%   reproduced by the search itself rather than asserted.
-% - polish=True + inf interaction: same verified finding as the first draft
-%   (reproduces on the lecture's own L-Halter demo, not reproduced on this
-%   chapter's own strut objective directly) - kept, not specific to which
-%   worked example carries it.
-% Cell holder section (second worked example, FEM-in-the-loop) untouched by
-% this revision - not part of David's complaint, only its own opening
-% transition sentence updated to reference the strut instead of the can.
+% Status: third full draft. Ch. 12 per private/book-plan.md §2 (lecture 10,
+% second half - optimization). Second draft anchored on a compression strut
+% sized against Euler buckling; David then asked for a first example that
+% genuinely NEEDS CAD - the strut's constraints were closed-form, so the
+% kernel call in its objective was a cross-check, never load-bearing. New
+% anchor, proposed and approved 2026-07: a ballasted spar buoy (instrument
+% float). Every quantity the optimizer touches is a kernel query: displaced
+% volume = (hull ∩ half-space).Volume(), center of buoyancy = .Center() of
+% the same intersection, shell mass/CoM = .Area() + area-weighted face
+% centroids. Equilibrium draft found by brentq root-find over kernel
+% volumes inside the objective - kernel-in-the-loop at two levels.
+% All numbers verified end to end this session, with the exact code shown
+% in the chapter (mm-kg units, fresh water 1e-6, steel 7.85e-6, shell
+% 4e-6 kg/mm^2, payload 3 kg at hatch-40, bounds body (150,800),
+% t_ballast (1,150), DE seed=42, maxiter=60, popsize=12, polish=False):
+% - Optimum: body=764.2 mm, t_ballast=81.68 mm -> m_total=8.417 kg
+%   (ballast 4.079, shell 1.338, payload 3.0), freeboard=60.00 mm and
+%   stability margin z_B-z_G=10.00 mm BOTH exactly binding, neither
+%   variable on a bound. Draft 764 mm of 904 mm height. Single evaluation
+%   0.04 s; full DE 1464 evaluations, 46 s.
+% - Quadratic-vs-linear penalty, run on the buoy's constraints:
+%   quadratic at rho_q=0.001 converges to z_B-z_G=-5.16 mm
+%   (CoM ABOVE CoB - the "optimized" buoy capsizes) and freeboard 52.07 mm
+%   vs required 60. rho_q x10^4 (=10.0) shrinks the stability shortfall to
+%   0.0015 mm - smaller, never gone. Linear penalty at rho=1 lands on
+%   60.00 / 10.00 exactly. Sharper stakes than the strut's 15.7% buckling
+%   shortfall: the failure here is a capsize, not a percentage.
+% - Nelder-Mead from ten starts spread across the bounds: the three
+%   floating starts (500,20),(650,5),(750,30) all reach the optimum
+%   (f=8.417). Seven starts describe a candidate that sinks, where the
+%   objective is inf (no equilibrium draft exists): six of them -
+%   (200,10),(250,120),(300,50),(400,100),(450,60),(700,140) - burn the
+%   full 600-evaluation budget shuffling an all-inf simplex and return
+%   their starting point with success=False; (600,80) stumbles onto a
+%   floating design mid-shuffle and reaches the optimum in 132 evals.
+%   Replaces the strut's two-basin table with an inf-plateau story, which
+%   also ties directly into the existing polish=True/inf discussion.
+% - Try It (verified): payload mounted at mid-hull (hatch/2) instead of
+%   hatch-40 -> optimum collapses to body=428.3 mm, m_total=4.618 kg
+%   (ballast 0.787 kg), both constraints again exactly binding.
+% - Tested and dropped: seawater variant (rho_w=1.025e-6) moves the
+%   optimum to body=746.4, t_b=82.3 but total mass stays within 3 g of
+%   the freshwater optimum - no clean directional claim, so no exercise.
+% - polish=True + inf interaction paragraph kept (finding is not specific
+%   to the worked example); its wording no longer cites where it was first
+%   reproduced, per the no-lecture-references rule. The mathematical claim
+%   (inf minus finite = inf kills the numerical gradient) stands alone.
+% - Cell holder section (second worked example, FEM-in-the-loop) content
+%   untouched; only its opening transition (now from the buoy) and a
+%   sweep of "X's own" phrasings changed.
+% - Figures: ch12_convergence.py rewritten for the buoy (mass vs
+%   iteration); new ch12_buoy.py renders the optimized hull split at its
+%   computed waterline. ch12-holder-stress.png unchanged.
 
 Every part this book has built so far was described by numbers the
 reader chose: a wall thickness typed into a function call, a fillet
-radius picked because it looked right. Chapter 9's own release
-pipeline already showed that a parametric function can be called with
-more than one set of numbers – a loop over named variants, not a
-single fixed part. Choosing well by hand works for two or three
-numbers at a time; it stops working long before a real part's own
-count of free dimensions, each pulling the design a different
-direction at once – a thinner wall saves mass but risks failure, a
-shorter part saves material but changes how the whole thing fails, and
-which variable actually decides the outcome is rarely obvious until it
-is checked. That tension is why optimization is a standing part of the
-mechanical design toolchain rather than a novelty: a gram removed from
-an aircraft or a satellite is fuel or payload gained for the vehicle's
-entire service life, and the same trade governs a battery pack, where
-every gram of supporting structure competes directly against a gram of
-cells that could have occupied its place instead. This chapter's
-subject is having a program navigate that trade for a real part –
-searching a range of possible parameter values for the one that
-minimizes a real, computable quantity, rather than checking candidates
-one at a time by hand.
+radius picked because it looked right. Chapter 9's release pipeline
+turned one such function into a whole family of parts by looping it
+over named variants. Choosing the numbers well by hand works for two
+or three of them at a time; it breaks down as soon as they start
+pulling against each other – in the buoy this chapter sizes, every
+millimeter of ballast that makes the hull float more upright also
+makes it float deeper – and which variable actually decides the
+outcome is rarely obvious until it is checked. That tension is why
+optimization is a standing part of the mechanical design toolchain:
+a gram removed from an aircraft or a satellite is fuel or payload
+gained for the vehicle's entire service life, and the same trade
+governs a battery pack, where every gram of supporting structure
+competes directly against a gram of cells that could have occupied
+its place. This chapter's subject is having a program navigate such
+trades: searching a range of possible parameter values for the one
+that minimizes a single computable quantity – mass, for both parts
+this chapter optimizes – while respecting the constraints a working
+part has to meet.
 
 ## Design Variables, Objective, Constraints
 
@@ -94,73 +85,154 @@ Written out:
 
 $$\min_{\mathbf{x}} f(\mathbf{x}) \quad \text{subject to} \quad g_i(\mathbf{x}) \leq 0, \quad x_j^{\text{lb}} \leq x_j \leq x_j^{\text{ub}}.$$
 
-A concrete version of this grounds the rest of the chapter: a
-**strut** – a slender tube loaded in compression, the kind of support
-post that holds a housing or an instrument off whatever it mounts to.
-A strut can fail two different ways, not one: the material itself can
-yield under direct compressive stress, or, well before that stress is
-reached, the whole tube can suddenly bow sideways and **buckle** – the
-governing failure mode of anything long and thin loaded along its own
-axis, and the reason sizing a strut is never just a stress
-calculation.
+A concrete version of this grounds the rest of the chapter: an
+**instrument buoy** – a floating housing that keeps a sensor package
+and its antenna above open water. The shape is a **spar buoy**, a
+hull much longer than it is wide that floats upright: a hemispherical
+dome at the bottom, a cylindrical body, and a conical neck at the top
+that carries the antenna. The electronics – `3` kg of them – sit just
+below the hatch at the top of the body, where they stay dry and
+reachable for service; a steel ballast disk rests in the dome at the
+bottom. A buoy like this has two requirements it either meets or does
+not. It has to float high enough – the hatch seal must clear the
+waterline with margin, or the first wave washes over it. And it has
+to float *upright* – a hull whose mass sits too high simply lies down
+flat on the water, antenna and all.
 
 ```python
-from cadquery import Solid
+from cadquery import Shape, Solid
 from cadquery import func as cf
 
+R_HULL, R_NECK, H_NECK = 60.0, 20.0, 80.0  # mm
 
-def strut(r_outer: float, wall: float, length: float) -> Solid:
-    if not 0 < wall < r_outer:
-        raise ValueError(f"wall must be between 0 and {r_outer}, got {wall}")
-    outer = cf.cylinder(d=2 * r_outer, h=length)
-    inner = cf.cylinder(d=2 * (r_outer - wall), h=length + 2).translate((0, 0, -1))
-    tube = outer - inner
-    assert isinstance(tube, Solid)
-    return tube
+
+def hull(body: float) -> Solid:
+    bottom = cf.sphere(2 * R_HULL).translate((0, 0, R_HULL))
+    middle = cf.cylinder(d=2 * R_HULL, h=body).translate((0, 0, R_HULL))
+    neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).translate((0, 0, R_HULL + body))
+    shape = bottom + middle + neck
+    assert isinstance(shape, Solid)
+    return shape
 ```
 
-`r_outer` and `wall` are this problem's design variables; `length` is
-fixed by wherever the strut has to reach, not something the optimizer
-gets to change. The two failure modes above translate directly into
-this problem's constraints, both closed-form – no mesh or solver
-needed yet:
+`body`, the length of the cylindrical section, is the first design
+variable; the thickness of the ballast disk, `t_ballast`, is the
+second. The hull diameter is fixed by the instrument rack and the
+mooring hardware, the payload by what the buoy exists to carry. The
+objective is total mass: this buoy is deployed and recovered by hand
+over the side of a small boat, and every kilogram of shell and
+ballast makes that job harder.
 
-$$P_{\text{cr}} = \frac{\pi^2 E I}{(KL)^2} \geq P, \qquad \sigma = \frac{P}{A} \leq \sigma_{\text{allow}},$$
+Both requirements come down to two classical facts about floating
+bodies. A body floats at the **draft** – the depth to which its hull
+sits in the water – where the displaced water weighs as much as the
+body does:
 
-where $I = \tfrac{\pi}{4}\left(r_\text{outer}^4 - r_\text{inner}^4\right)$
-and $A = \pi\left(r_\text{outer}^2 - r_\text{inner}^2\right)$ are the
-tube's own cross-sectional moment of inertia and area, $P$ the applied
-compressive load, $E$ the material's stiffness, and $K$ a factor set
-by how the strut's own two ends are held – $K=1$ for a strut free to
-rotate at both ends, the case this chapter uses throughout. The
-objective is the cross-section $A$ itself: minimizing it minimizes the
-strut's own mass for a fixed length, since mass is just $A$ times
-length times density.
+$$\rho_w \, V_{\text{sub}}(d) = m_{\text{total}},$$
+
+and it floats upright if its center of mass lies below its **center
+of buoyancy**, the centroid of the submerged volume: tilt the hull,
+and weight pulling down at the one and buoyancy pushing up at the
+other form a couple that rights it. (Ship designers work with a
+weaker criterion, the metacenter, which tolerates a center of mass
+above the center of buoyancy; for a hull as slender as this one the
+metacenter sits about a millimeter above the center of buoyancy, so
+the strict condition is the honest one.) The constraints, then: a
+**freeboard** – the height of the hatch above the waterline – of at
+least `60` mm, and a center of buoyancy at least `10` mm above the
+center of mass, margin for waves and for everything the model leaves
+out. With $z_B$ and $z_G$ for the two centers:
+
+$$(R_{\text{hull}} + \text{body}) - d \geq 60 \text{ mm}, \qquad z_B - z_G \geq 10 \text{ mm}.$$
+
+Every quantity in those two conditions is a property of the shape,
+and the kernel can be asked for each one directly. The submerged
+volume is a boolean intersection – the hull cut by a box that reaches
+up to the candidate waterline – and $V_{\text{sub}}$ is its
+`.Volume()`; the center of buoyancy is the same intersection's
+`.Center()`; the shell's mass and center of mass come from `.Area()`
+and the area-weighted centroids of the faces. For this hull – a dome,
+a cylinder, and a cone fused together, sliced at an arbitrary height –
+those method calls are the only practical route to any of these
+numbers, and each costs milliseconds. Lengths are in millimeters and
+masses in kilograms throughout, so the densities below carry units of
+kg/mm³:
+
+```python
+import numpy as np
+from scipy.optimize import brentq
+
+RHO_WATER, RHO_STEEL = 1.0e-6, 7.85e-6  # kg/mm^3, fresh water and steel
+SHELL_AREAL = 4.0e-6  # kg/mm^2, molded plastic shell
+M_PAYLOAD = 3.0  # kg, electronics mounted 40 mm below the hatch
+R_BALLAST, Z_BALLAST = 45.0, 25.0  # mm, steel disk resting in the dome
+FREEBOARD_MIN, STABILITY_MIN = 60.0, 10.0  # mm
+
+
+def submerged(shape: Solid, draft: float) -> Shape:
+    below = cf.box(6 * R_HULL, 6 * R_HULL, draft)
+    return shape * below
+
+
+def evaluate(body: float, t_ballast: float) -> tuple[float, float, float]:
+    shape = hull(body)
+    hatch = R_HULL + body
+    m_shell = shape.Area() * SHELL_AREAL
+    z_shell = sum(f.Area() * f.Center().z for f in shape.Faces()) / shape.Area()
+    m_ballast = RHO_STEEL * np.pi * R_BALLAST**2 * t_ballast
+    m_total = m_shell + m_ballast + M_PAYLOAD
+    z_com = (
+        m_shell * z_shell
+        + m_ballast * (Z_BALLAST + t_ballast / 2)
+        + M_PAYLOAD * (hatch - 40)
+    ) / m_total
+
+    def net_lift(draft: float) -> float:
+        return RHO_WATER * submerged(shape, draft).Volume() - m_total
+
+    if net_lift(hatch + H_NECK - 1) < 0:
+        raise ValueError("heavier than any displacement it can generate: it sinks")
+    draft = brentq(net_lift, 1.0, hatch + H_NECK - 1, xtol=0.01)
+    z_cob = submerged(shape, draft).Center().z
+    return m_total, hatch - draft, z_cob - z_com
+```
+
+`submerged` is the entire hydrostatics engine: one intersection.
+`evaluate` does the bookkeeping around it. The shell's center of mass
+is the area-weighted average of the face centroids – honest for a
+shell of uniform thickness – and the ballast and payload enter as
+masses at known heights. Then `brentq`, a classic bracketing
+**root-finder**, finds the equilibrium: `net_lift` is positive when
+the buoy displaces more than its weight and negative when it
+displaces less, and the draft where it crosses zero is where the buoy
+actually floats. A candidate heavier than the displacement of its
+entire hull never floats at all, and `evaluate` refuses it with an
+exception rather than returning numbers that mean nothing.
 
 `scipy.optimize` expects one fixed calling convention regardless of
 which algorithm ends up using it: a function taking a single NumPy
-array and returning a single scalar, never raising. Turning the two
-constraints above into something that convention can actually search
+array and returning a single scalar, never raising. Turning
+`evaluate`'s two margins into something that convention can search
 against needs one more idea: a **penalty** – a term added to the
 objective that grows the moment a constraint is violated, since the
-optimizer has no other way to compare a design that fails against one
-that does not.
+optimizer has no other way to compare a design that fails against
+one that does not.
 
 The obvious first attempt squares the violation, $p(\mathbf{x}) =
 \max(0, g(\mathbf{x}))^2 \cdot \rho$, and for a soft preference that
-would be fine. For a real safety margin it is not: the derivative of
-$g^2$ is $2g$, which is exactly zero at $g=0$, so right at the
-constraint boundary the penalty pushes back with no force at all, and
-the optimizer, feeling nothing stopping it there, settles just inside
-the infeasible side rather than exactly on the feasible one. Run on
-the strut's own buckling constraint, with a penalty weight that looks
-entirely reasonable on paper, that is not a rounding error: the search
-converges to a strut good for `4215.8` N of buckling resistance
-against a required `5000` N – a `15.7`% shortfall, an "optimized"
-strut that is not actually safe to build. Making the same penalty
-weight a thousand times larger only shrinks the shortfall to `0.01`% –
-smaller, never gone, exactly the asymptotic behavior that vanishing
-derivative predicts.
+would be fine. For a real physical margin it is not: the derivative
+of $g^2$ is $2g$, which is exactly zero at $g=0$, so right at the
+constraint boundary the penalty pushes back with no force at all,
+and the optimizer, feeling nothing stopping it there, settles just
+inside the infeasible side rather than exactly on the feasible one.
+Run on the buoy with a penalty weight that looks entirely reasonable
+on paper, that is far worse than a rounding error: the search
+converges to a design whose center of mass sits `5.2` mm *above* its
+center of buoyancy – an "optimized" buoy that capsizes – with
+`52.1` mm of freeboard against the required `60`. Making the same
+weight ten thousand times larger shrinks the stability shortfall to
+two thousandths of a millimeter – smaller, never gone, exactly the
+asymptotic behavior that vanishing derivative predicts.
 
 The fix is a penalty whose slope never vanishes:
 
@@ -168,55 +240,44 @@ $$p(\mathbf{x}) = \max(0,\, g(\mathbf{x})) \cdot \rho.$$
 
 Linear rather than quadratic, with a constant slope of $\rho$
 everywhere, including right at the boundary, so once $\rho$ is large
-enough the optimizer's own minimum lands exactly on the constraint
-instead of drifting inside it. The same search, the same weight scale,
-now converges to a strut good for exactly `5000.0` N – no shortfall at
-all. Every constraint in this chapter is a real physical limit a built
-part either meets or does not, so every objective below uses this
-linear form:
+enough the minimum lands exactly on the constraint instead of
+drifting inside it. The same search, with the same kind of eyeballed
+weight, converges to `60.00` mm of freeboard and a `10.00` mm
+stability margin – both limits met exactly. Every constraint in this
+chapter is a real physical limit a deployed part either meets or does
+not, so every objective below uses the linear form:
 
 ```python
-import numpy as np
-
-E, SIGMA_ALLOW = 70e3, 150.0  # MPa, aluminum with margin below yield
-P, LENGTH, K = 5000.0, 1200.0, 1.0  # N, mm, pinned-pinned
-
-
-def section(r_outer: float, wall: float) -> tuple[float, float]:
-    r_inner = r_outer - wall
-    area = np.pi * (r_outer**2 - r_inner**2)
-    moment = np.pi / 4 * (r_outer**4 - r_inner**4)
-    return area, moment
-
-
-def objective(x: np.ndarray, rho: float = 20.0) -> float:
-    r_outer, wall = x
+def objective(x: np.ndarray, rho: float = 1.0) -> float:
+    body, t_ballast = x
     try:
-        area, moment = section(r_outer, wall)
-        p_crit = np.pi**2 * E * moment / (K * LENGTH) ** 2
-        stress = P / area
-        penalty = max(0.0, P - p_crit) * rho / 1000 + max(0.0, stress - SIGMA_ALLOW) * rho
-        return strut(r_outer, wall, LENGTH).Volume() / LENGTH + penalty
+        m_total, freeboard, stability = evaluate(body, t_ballast)
     except Exception:
         return float("inf")
+    penalty = max(0.0, FREEBOARD_MIN - freeboard) * rho
+    penalty += max(0.0, STABILITY_MIN - stability) * rho
+    return m_total + penalty
 ```
 
-`x` carries no variable names by the time the optimizer sees it – just
-two numbers in the order this function agrees to unpack them in – and
-`strut(...).Volume() / LENGTH` recovers the same cross-sectional area
-`section` already computed analytically, this time from the real solid
-rather than a formula, the same cross-check in miniature Chapter 8
-built into every one of its own functions.
+`x` carries no variable names by the time the optimizer sees it –
+just two numbers in the order this function agrees to unpack them in.
+And the `try`/`except` catches everything: a candidate that sinks, a
+boolean that fails, a root-finder that loses its bracket – each
+becomes `float("inf")`, a value that loses every comparison against a
+design that works.
 
 ## Choosing an Algorithm
 
 CAD objective functions are rarely smooth: a boolean operation either
-succeeds or it does not, a fillet either fits or it throws, and even a
-successful evaluation carries the small numerical noise every kernel
-operation does. Gradient-based methods assume a derivative exists and
-means something at every point; **derivative-free** methods only ever
-compare function values against each other, which is exactly what a
-CAD objective can actually promise.
+succeeds or it does not, a fillet either fits or it throws, and even
+a successful evaluation carries the small numerical noise every
+kernel operation does. This chapter's objective goes further: across
+the entire region of the bounds where a candidate sinks, it returns
+`inf` – a plateau with no slope at all. Gradient-based methods assume
+a derivative exists and means something at every point;
+**derivative-free** methods only ever compare function values against
+each other, which is exactly what a CAD objective can actually
+promise.
 
 **Nelder-Mead** keeps a small **simplex** of trial points – three
 points for this two-variable problem, one more than the number of
@@ -224,102 +285,120 @@ design variables – and repeatedly replaces the worst of them: reflect
 it through the center of the others, and if that reflected point is
 better still, push further out in the same direction; if not, pull
 back toward the center instead. That is cheap, a handful of
-evaluations per step, but it only ever moves toward whatever is better
-*nearby* – nothing in the mechanism ever looks somewhere else in the
-search space entirely, so wherever the simplex first starts descending
-decides which valley it can ever find, right or wrong.
+evaluations per step, but it only ever moves toward whatever is
+better *nearby* – nothing in the mechanism ever looks somewhere else
+in the search space entirely, so what surrounds the starting simplex
+decides everything.
 
-Checked directly on the strut, from ten different starting points
-spread across its own bounds, that risk is not theoretical: six reach
-the true optimum, area `41.99`–`42.00` mm². The other four all
-converge to the exact same wrong point instead – `r_outer=3.26` mm,
-`wall=3.10`–`3.19` mm, area `132.5` mm² – not four different mistakes,
-one specific second valley wide enough to catch two-fifths of a
-reasonable spread of starting guesses:
+Checked directly on the buoy, from ten starting points spread across
+the bounds, that risk takes a concrete form:
 
 ```{raw:typst}
 #import "table-style.typ": tableStyle, columnStyle
 ```
 
-| Start $(r_\text{outer}, \text{wall})$ | Converges to |
+| Start $(\text{body}, t_\text{ballast})$ | Converges to |
 |---|---|
-| $(10, 2)$, $(5, 0.5)$, $(35, 1)$ | true optimum, area $\approx 42.0$ |
-| $(30, 4)$, $(15, 4.5)$, $(25, 3.5)$ | same wrong valley, area $\approx 132.5$ |
+| $(500, 20)$, $(650, 5)$, $(750, 30)$ | the optimum, $8.42$ kg |
+| $(200, 10)$, $(250, 120)$, $(300, 50)$, $(400, 100)$, $(450, 60)$, $(700, 140)$ | its own starting point, `success=False` |
+| $(600, 80)$ | the optimum, after a lucky escape |
+
+The three starts that describe a floating buoy converge to the same
+optimum every time – with a smooth feasible region and two variables,
+the simplex is reliable once it has a foothold. But seven of the ten
+starts describe a buoy that sinks, and there the simplex is born on
+the `inf` plateau: three trial points, all infinite, every comparison
+a tie. Six of those seven burn their entire evaluation budget
+shuffling in place and hand back their starting point with
+`success=False`; the seventh happens to stumble onto a floating
+design mid-shuffle and recovers. A local search cannot cross a region
+that gives it nothing to compare – and for this buoy, sinking
+candidates cover most of the bounded search space a designer would
+reasonably write down.
 
 **Differential evolution** trades that risk for cost. Instead of one
-simplex, it keeps an entire *population* of candidate points scattered
-across the whole bounded search space from the start; each generation,
-it builds new candidates by combining existing ones – take two
-population members, scale their difference, add it to a third – and
-keeps whichever version, old or new, scores better. Because the
-starting population already covers the space rather than sitting in
-one place, a better valley elsewhere is something the population can
-simply already have a foothold in, not something the search has to
-stumble into. That coverage costs evaluations – population size times
+simplex, it keeps an entire *population* of candidate points
+scattered across the whole bounded search space from the start; each
+generation, it builds new candidates by combining existing ones –
+take two population members, scale their difference, add it to a
+third – and keeps whichever version, old or new, scores better.
+Because the starting population already covers the space, some of
+its members float from generation zero, and the plateau that strands
+a lone simplex is just territory the population's survivors quickly
+abandon. That coverage costs evaluations – population size times
 generations, often in the thousands – prohibitively expensive once a
 single evaluation takes more than a fraction of a second.
 
 One further interaction is worth naming plainly.
 `differential_evolution` defaults to `polish=True`, which runs a
-local `L-BFGS-B` step on its own best result at the end – and
-`L-BFGS-B` estimates its own gradients numerically, by evaluating the
-objective at points offset by a tiny step. An objective that returns
-`float("inf")` anywhere near that best result collapses that gradient
-estimate outright: `inf` minus a finite number is `inf`, not a usable
-slope. This reproduces as a genuine `RuntimeWarning` on some bounded
-problems – confirmed on a lecture-style objective built the same way –
-though not on every problem that uses the `inf`-on-failure pattern;
-whether it fires depends on how close the polish step's own probes
-land to an infeasible or invalid region. Since there is no way to know
-that in advance, every optimizer call in this chapter sets
-`polish=False` and relies on the linear penalty above to do the
-constraint-enforcing work instead.
+local `L-BFGS-B` step on the best result at the end – and `L-BFGS-B`
+estimates its gradients numerically, by evaluating the objective at
+points offset by a tiny step. An objective that returns
+`float("inf")` anywhere near that best result collapses the gradient
+estimate outright: `inf` minus a finite number is `inf`, not a
+usable slope. Whether a given run actually trips over this depends
+on how close the polish step's probes land to an infeasible or
+invalid region, and there is no way to know that in advance. Every
+optimizer call in this chapter sets `polish=False` and relies on the
+linear penalty above to do the constraint-enforcing work instead.
 
-With that fixed, the strut's own optimization is a few lines:
+With that fixed, the buoy's optimization is a few lines:
 
 ```python
 from scipy.optimize import differential_evolution
 
-bounds = [(3, 40), (0.3, 5)]  # r_outer, wall
+bounds = [(150, 800), (1, 150)]  # body, t_ballast
 result = differential_evolution(
-    objective, bounds, seed=42, maxiter=1000, tol=1e-10, popsize=25, polish=False
+    objective, bounds, seed=42, maxiter=60, popsize=12, tol=1e-8, polish=False
 )
-r_outer, wall = result.x
+body, t_ballast = result.x
 ```
 
-The search converges to `r_outer=22.43` mm, `wall=0.30` mm – a
-cross-section of `41.99` mm², a strut of about `136` g over its
-`1200` mm length. `wall` sits exactly on its own lower manufacturing
-bound: thinner is always better once the buckling constraint is
-satisfied, so the search pushes it as far as that bound allows and
-lets `r_outer` do the rest of the work. Checking the result the same
-way Chapter 8 would: buckling resistance comes out at `5000.0` N,
-exactly the required load, while the resulting stress is `119.1` MPa
-against a `150` MPa allowable – real margin, not zero. Buckling, not
-material strength, is what actually decided this strut's own
-thickness – the classical result for a slender column, confirmed here
-by search rather than assumed.
+Each evaluation – a fused hull, a boolean intersection for every step
+of the root-find – costs about `0.04` s, and the full search of
+`1464` evaluations runs in under a minute. It converges to
+`body=764.2` mm and `t_ballast=81.7` mm: a buoy of `8.42` kg all told
+– `4.08` kg of steel ballast, `1.34` kg of shell, `3` kg of payload –
+floating with `764` mm of its `904` mm height under water. Checking
+the result the way Chapter 8 would: the freeboard comes out at
+`60.00` mm and the stability margin at `10.00` mm – both constraints
+exactly binding, with neither design variable resting on a bound. The
+search traded hull length against ballast until the two physical
+limits bit at the same time, and where that point lies was computed,
+fourteen hundred times over, by the same kernel that will eventually
+export this hull for manufacture.
+
+:::{figure} ../figures/generated/ch12-buoy.png
+:width: 60%
+
+The optimized buoy, split at the waterline the root-finder settled
+on: `764` mm of the `904` mm hull sits below the surface, and the
+hatch at the top of the cylindrical body clears it by exactly the
+required `60` mm.
+:::
 
 :::{figure} ../figures/generated/ch12-convergence.png
 :width: 70%
 
-Cross-sectional area against iteration, recorded with a `callback`
-passed to `differential_evolution`. The steep early drop is the
-population finding the feasible region at all; the long flat tail is
-refinement within it – the shape any convergence plot should have, and
-the reason to always look at one rather than trust a single final
-number.
+Total mass against iteration, recorded with a `callback` passed to
+`differential_evolution`; the right panel zooms the vertical axis.
+The steep early drop is the population finding designs that float
+and clear both margins at all. The tail, flat at full scale, keeps
+stepping down by tens of grams for another thirty generations before
+it truly settles – the reason to always look at a convergence plot
+rather than trust a single final number.
 :::
 
 ## A Cell Holder, Optimized Against Its Own Simulation
 
-The strut's own objective was cheap enough to evaluate thousands of
-times because it never left closed-form formulas. A **cell holder** –
-the thin-walled lattice that spaces battery cells apart in a real
-pack, gripping each one by friction rather than resting it on anything
-– poses a genuinely different problem: how thin can its walls go
-before the cells' own outward push cracks them, a question with no
-closed form, answerable only by Chapter 11's own simulation pipeline.
+The buoy's objective never took longer than a few hundredths of a
+second, because volumes, areas, and centroids are cheap for any
+kernel. A **cell holder** – the thin-walled lattice that spaces
+battery cells apart in a real pack, gripping each one by friction
+rather than resting it on anything – poses a genuinely different
+problem: how thin can its walls go before the cells' outward push
+cracks them, a question with no closed form, answerable only by
+Chapter 11's simulation pipeline.
 
 ```python
 R_CELL, CLEARANCE, SPACING, HOLDER_H = 9.0, 0.3, 24.0, 5.0
@@ -340,21 +419,21 @@ def cell_holder(wall: float) -> Solid:
     return holder
 ```
 
-Three pockets, the same spacing Chapter 9's own battery module already
-uses, joined into one lattice by the union with the two end caps
-rather than left as three separate bosses – `wall` is this problem's
-one design variable, the same thickness on every pocket and around
-the outside.
+Three pockets, the same spacing as Chapter 9's battery module, joined
+into one lattice by the union with the two end caps rather than left
+as three separate bosses – `wall` is this problem's one design
+variable, the same thickness on every pocket and around the outside.
 
-There is no floor: a real spacer like this carries no vertical load at
-all, only lateral position, so modeling one would misrepresent what
-the part actually does. There is also no contact mechanics: this book
-has no tool for simulating one body pressing against another, and
-building one is well beyond this chapter's scope. What stands in for
-it is a **prescribed pressure**, applied directly to each pocket's own
-inner wall as a boundary load – an estimate of what contact with a
-snugly fitted cell would produce, not a measurement of it, the same
-honest simplification Chapter 11's thermal constants already made:
+There is no floor: a real spacer like this carries no vertical load
+at all, only lateral position, so modeling one would misrepresent
+what the part actually does. There is also no contact mechanics: this
+book has no tool for simulating one body pressing against another,
+and building one is well beyond this chapter's scope. What stands in
+for it is a **prescribed pressure**, applied directly to each
+pocket's inner wall as a boundary load – an estimate of what contact
+with a snugly fitted cell would produce, not a measurement of it, the
+same honest simplification Chapter 11's thermal constants already
+made:
 
 ```python
 import cadgmsh
@@ -403,17 +482,17 @@ def max_stress(wall: float, lc: float = 1.5) -> tuple[float, float]:
     return holder.Volume(), von_mises.max()
 ```
 
-`pressure_load` is a `LinearForm` exactly like Chapter 11's own
-convective boundary, only built from the facet normal `w.n` instead of
-a fixed direction – `-PRESSURE * w.n` pushes outward through the wall
-at every point on the pocket, whichever way that wall happens to
+`pressure_load` is a `LinearForm` exactly like Chapter 11's
+convective boundary, only built from the facet normal `w.n` instead
+of a fixed direction – `-PRESSURE * w.n` pushes outward through the
+wall at every point on the pocket, whichever way that wall happens to
 curve. `bottoms` stays fixed, standing in for whatever the holder
 rests against; nothing else is constrained.
 
-The objective wraps `max_stress` the same way the strut's own
-objective wrapped `section` – minimize material, penalize the one
-constraint that matters, a maximum stress the plastic can actually
-survive with a safety margin built in:
+The objective wraps `max_stress` the same way the buoy's objective
+wrapped `evaluate` – minimize material, penalize the one constraint
+that matters, a maximum stress the plastic can actually survive with
+a safety margin built in:
 
 ```python
 SIGMA_MAX = 15.0  # MPa, an allowable stress with margin below the material's yield
@@ -434,33 +513,32 @@ result = differential_evolution(
 )
 ```
 
-`50.0` is not an arbitrary round number so much as a scale-matching
-choice: it has to make a stress overshoot cost more than the volume
-the search would save by ignoring it, the same reasoning behind every
-penalty weight in this chapter, chosen relative to what it is
-penalizing rather than copied from one problem to the next. Each
-evaluation costs about a second – a real mesh, a real solve – so the
-bounded, population-limited search above runs in under four minutes
-rather than the strut's own few seconds.
+`50.0` is a scale-matching choice: it has to make a stress overshoot
+cost more than the volume the search would save by ignoring it – the
+same reasoning behind every penalty weight in this chapter, chosen
+relative to what it is penalizing rather than copied from one problem
+to the next. Each evaluation costs about a second – a real mesh, a
+real solve – so the bounded, population-limited search above runs in
+under four minutes.
 
-The result: `wall=0.656` mm, material volume `2260.3` mm³, maximum von
-Mises stress `15.015` MPa – landing almost exactly on the `15.0` MPa
-allowable, not somewhere comfortably below it. That is what an active
-constraint looks like: the search did not stop at some conservative
-compromise, it used up every bit of margin the allowable stress
-offered and stopped exactly where using more would break the limit
-this problem exists to respect.
+The result: `wall=0.656` mm, material volume `2260.3` mm³, maximum
+von Mises stress `15.015` MPa – landing almost exactly on the
+`15.0` MPa allowable, not somewhere comfortably below it. That is
+what an active constraint looks like: the search did not stop at some
+conservative compromise, it used up every bit of margin the allowable
+stress offered and stopped exactly where using more would break the
+limit this problem exists to respect.
 
 :::{figure} ../figures/generated/ch12-holder-stress.png
 :width: 80%
 
-The optimized holder's own von Mises field. Stress concentrates in a
+The optimized holder's von Mises field. Stress concentrates in a
 tight ring around each pocket, where the prescribed pressure acts
 directly on the wall; the material between pockets, further from any
-loaded surface, carries almost none of it – exactly the kind of detail
-a single average stress number would have hidden, the same lesson
-Chapter 11's own tension rod taught with its mid-span-versus-loaded-face
-comparison.
+loaded surface, carries almost none of it – exactly the kind of
+detail a single average stress number would have hidden, the same
+lesson Chapter 11's tension rod taught with its
+mid-span-versus-loaded-face comparison.
 :::
 
 ## Outlook: When Evaluations Get Expensive
@@ -469,44 +547,45 @@ A second's worth of meshing and solving per evaluation, times a few
 hundred evaluations, is a coffee break. A real assembly's FEM model,
 or one with contact genuinely modeled rather than approximated by a
 prescribed pressure, can take minutes per evaluation rather than a
-second – and differential evolution's own appetite for thousands of
+second – and differential evolution's appetite for thousands of
 evaluations turns from inconvenient into simply impossible. The
-standard answer is a **surrogate model**: run the expensive simulation
-at a modest, deliberately chosen set of points, fit a cheap
-approximation – a polynomial, a Gaussian process – to those results,
-and optimize the cheap approximation instead, checking its prediction
-against the real simulation only near the answer it settles on. That
-is a book of its own, not a section of this one; what this chapter's
-own two examples establish is the piece the surrogate approach still
-depends on – an objective function that calls a real geometry kernel
-and a real solver, wrapped cleanly enough that nothing about replacing
-`differential_evolution` with something smarter has to touch the
-model itself.
+standard answer is a **surrogate model**: run the expensive
+simulation at a modest, deliberately chosen set of points, fit a
+cheap approximation – a polynomial, a Gaussian process – to those
+results, and optimize the cheap approximation instead, checking its
+prediction against the real simulation only near the answer it
+settles on. That is a book of its own, not a section of this one;
+what the buoy and the cell holder establish is the piece the
+surrogate approach still depends on – an objective function that
+calls a real geometry kernel and a real solver, wrapped cleanly
+enough that nothing about replacing `differential_evolution` with
+something smarter has to touch the model itself.
 
-That is where this book ends: not with a part, but with a part's own
+That is where this book ends: not with a part, but with a part's
 geometry, mesh, and physics wired together closely enough that
 searching across all of them is three lines of `scipy.optimize`, not
 a separate campaign of hand-built, hand-checked variants run one at a
-time. A GUI can be scripted, eventually, awkwardly, around its own
-edges. A model that was code from its very first line was always
-already there.
+time. A GUI can be scripted, eventually, awkwardly, around its edges.
+A model that was code from its very first line was always already
+there.
 
 :::{note} Try It
-- Rerun the strut at `LENGTH=300` instead of `1200` – confirm the
-  optimizer now settles on a *smaller* cross-section with the yield
-  constraint exactly binding and real margin left on buckling, the
-  opposite of the 1200 mm case: a short, stubby strut fails by
-  crushing, a long, slender one by buckling, and which regime a given
-  design sits in is not always obvious in advance.
+- Mount the electronics at mid-hull (`hatch / 2` instead of
+  `hatch - 40`) and rerun – confirm the optimum collapses to a
+  `428` mm body and `4.6` kg total, both constraints again exactly
+  binding. Nearly half the buoy existed to carry `3` kg at the top
+  of the hull; the payload's height, and the ballast spent canceling
+  it, is what actually sized the design.
 - Run Nelder-Mead on the cell holder from a few different starting
-  points between `0.3` and `3.0` – with only one design variable,
-  confirm it converges reliably every time, unlike the strut above.
-- Rewrite the holder's own penalty as a quadratic one and rerun –
-  confirm the same silent shortfall this chapter measured on the
-  strut's buckling constraint shows up here too, now against a real
-  stress limit instead of a load.
-- Double `PRESSURE` on the cell holder and rerun – confirm the optimal
-  `wall` grows, and check by how much against the roughly linear
-  relationship between applied pressure and resulting stress that
-  linear elasticity predicts.
+  points between `0.3` and `3.0` – with only one design variable and
+  every candidate in the bounds buildable, confirm it converges
+  reliably every time, unlike the buoy above.
+- Rewrite the holder's penalty as a quadratic one and rerun – confirm
+  the same silent shortfall this chapter measured on the buoy's
+  stability margin shows up here too, now against a real stress limit
+  instead of a capsize.
+- Double `PRESSURE` on the cell holder and rerun – confirm the
+  optimal `wall` grows, and check by how much against the roughly
+  linear relationship between applied pressure and resulting stress
+  that linear elasticity predicts.
 :::
