@@ -106,6 +106,39 @@
 % book-plan.md §8. Do not re-add the W7-X section without a genuinely
 % different, more tractable plan than what's in the backup file.
 %
+% 2026-07-11: intro paragraph added; naca4_points was USED but never
+% DEFINED in the chapter (reader could not reproduce the wing) - the
+% function is now a listing, restructured so Black-92 doesn't shred the
+% formula lines, verified point-for-point identical to ch07_wing.py's
+% version; the claimed "maximum camber 0.04" was wrong (it is 0.02 -
+% the chapter even said "camber 2%" one line later; verified
+% numerically, peak at x=0.396 of the cosine-spaced samples, thickness
+% 0.12 peak at x=0.297); stale "Chapter 12 returns to this same lid,
+% rib-stiffened" sentence cut (Ch. 12's FEM example is the cell holder,
+% the rib lid never happened); "X's own" tic swept; new figure
+% ch07_airfoil.svg (2D NACA 2412 outline with camber line and thickness
+% marked - readers who have never seen an airfoil get the vocabulary
+% the wing section uses). Re-verified this session: transformed tube
+% isValid()==True despite the pinch; right = 3 CYLINDER + 2 PLANE, no
+% REVOLUTION; round = same + exactly 2 REVOLUTION; positionAt(1.0,
+% mode="parameter") -> (30,0,0) vs mode="length" -> (60,30,0); duct
+% 5 BSPLINE + 2 PLANE; loft circle-to-vertex -> ['CONE'].
+% Exercise feasibility checked same day (David asked): the lid exercise
+% as previously written was NOT solvable - cf.hollow on the lofted
+% rounded-rect lid returns an INVALID shape in every variant tried
+% (kind="intersection": silent no-op, volume unchanged; kind="arc":
+% plausible volume 7366 but isValid()==False; walls 1.0 and 1.5 alike).
+% The working route, now the one the exercise teaches: subtract an
+% inner loft of inward-offset rounded rectangles - valid, 7362.9 mm^3,
+% 19 faces. The Loft-section coda no longer names cf.hollow as "one
+% call" (falsified for exactly this geometry); the exercise hints
+% cf.fillet2D (face.vertices() compound, NOT a Python list - a list
+% raises AttributeError) and turns the hollow trap into an isValid()
+% check. Exercise 1 rewording: ch4's exercise builds hex-packed POCKETS
+% in a tray, not a standing cell grid - now says "seat cells in the
+% hex-packed tray"; viewer-only overlap check replaced by
+% zero-intersection-volume in code.
+%
 % Verification discipline matches Ch. 6: every claim checked against
 % cf/OCP before writing, every figure generated from numbers verified
 % that way first. Note from the W7-X attempt: verifying a claim before
@@ -113,9 +146,17 @@
 % questions - only show code the reader would want to reproduce or learn
 % from, never a one-off diagnostic built purely to check a claim.
 
+Extrude pushed a profile along a straight line; revolve spun one
+around a fixed axis. This chapter adds the two operations that free
+the profile from both constraints: sweep, which carries it along an
+arbitrary path curve, and loft, which fits a surface through a
+sequence of profiles placed anywhere in space. The capstone composes
+them with Chapter 6's curves into a genuinely freeform part – a
+swept, tapered airliner wing that curves up into a winglet.
+
 ## Sweep: A Profile Carried Along a Path
 
-A **sweep** carries a profile along a path curve, the path's own
+A **sweep** carries a profile along a path curve, the path's
 tangent direction deciding how the profile is placed and reoriented the
 entire way. A profile at the very start of a path needs exactly that
 local frame – which way is "along the path," which way is "up" – built
@@ -142,7 +183,7 @@ topological consistency, not whether the shape looks like the one asked
 for. The default `transition="transformed"` places the profile on the
 plane bisecting each pair of incoming and outgoing path directions; at a
 gentle bend that plane cuts a clean miter, but sharpen the bend enough
-and the same bisector plane slices back through the tube's own incoming
+and the same bisector plane slices back through the tube's incoming
 wall before the joint, which is exactly the fold in the render above.
 
 Two other transition modes handle the same sharp bend without pinching:
@@ -177,9 +218,8 @@ a clean squared-off elbow. Right (`round`): a clean rounded elbow.
 :::
 
 A path with more than one profile along it is a **multisection sweep**
-– sweep and loft's own hybrid, the profile changing shape at each
-station while still following an explicit path rather than loft's
-implicit straight-line interpolation between stations. Placing the
+– a hybrid of sweep and loft, the profile changing shape at each
+station while still following an explicit path. Placing the
 *end* profile is where Chapter 6's two parameter modes stop being an
 academic distinction: `path` above is a `Wire` built from three
 straight edges, each with its own local parameter range starting back
@@ -249,10 +289,9 @@ confirming a cone really is nothing more than a degenerate loft.
 
 The tray Chapter 4 built for a battery cell could use a lid: loft
 between a rounded rectangle at the base and a smaller rounded rectangle
-at the top, drafted inward, then one call to `cf.hollow` for wall
-thickness – no different in kind from the duct above, just a gentler
-taper. Chapter 12 returns to this same lid and makes it structural,
-rib-stiffened rather than a plain cover; here it is only worth naming.
+at the top, then hollow the result out for wall thickness – no
+different in kind from the duct above, just a gentler taper. Building
+it is one of this chapter's exercises.
 
 ## Multisection Loft: A Curved Spine of Profiles
 
@@ -264,20 +303,63 @@ a visible feature on most modern airliners: the stations a loft needs
 are not spaced along a straight line at all, but along a curve. That
 curve is exactly what Chapter 6's interpolating spline already builds,
 and placing a profile on it at a chosen point is exactly what this
-chapter's own Sweep section already did with `positionAt` and
+chapter's Sweep section already did with `positionAt` and
 `tangentAt` – a wing is those two pieces composed, not a new technique.
 
 A wing section, or **airfoil**, is not an arbitrary curve. The
 **NACA four-digit** family, published by the National Advisory
 Committee for Aeronautics in the 1930s and still in everyday use,
-defines one from three digits alone: maximum camber, its position along
-the chord, and maximum thickness, each a closed-form function of the
-chordwise coordinate. `naca4_points(code)` builds one from those three
-digits; reading the numbers it produces back – maximum camber $0.04$ at
-$x=0.4$, maximum thickness $0.12$ near $x=0.3$ for `'2412'` – is a
-direct check that the formula was transcribed correctly, camber $2\%$ at
-$40\%$ chord and thickness $12\%$, exactly the three digits the name
-promises.
+defines one from three digits alone: maximum camber, its position
+along the **chord** – the straight line from the leading edge to the
+trailing edge, against whose length everything else is measured – and
+maximum thickness. Both ingredients are short closed-form functions: a
+camber line the profile bends along, and a thickness distribution laid
+perpendicular to it,
+
+```python
+import math
+
+
+def naca4_points(code, n=60):
+    m, p, t = int(code[0]) / 100, int(code[1]) / 10, int(code[2:]) / 100
+    xs = [0.5 * (1 - math.cos(math.pi * i / n)) for i in range(n + 1)]
+
+    def thickness(x):
+        poly = 0.2969 * math.sqrt(x) - 0.1260 * x - 0.3516 * x**2 + 0.2843 * x**3
+        return 5 * t * (poly - 0.1036 * x**4)
+
+    def camber(x):
+        if x < p:
+            return m / p**2 * (2 * p * x - x**2), 2 * m / p**2 * (p - x)
+        k = m / (1 - p) ** 2
+        return k * ((1 - 2 * p) + 2 * p * x - x**2), 2 * k * (p - x)
+
+    upper, lower = [], []
+    for x in xs:
+        yc, dyc = camber(x)
+        theta, yt = math.atan(dyc), thickness(x)
+        upper.append((x - yt * math.sin(theta), yc + yt * math.cos(theta)))
+        lower.append((x + yt * math.sin(theta), yc - yt * math.cos(theta)))
+    return list(reversed(lower)) + upper[1:]
+```
+
+one outline, on a chord running from $0$ to $1$, traced from the
+trailing edge around the leading edge and back. The cosine spacing in
+`xs` concentrates sample points near the leading edge, where the
+curvature is highest. Evaluating the two ingredient functions at their
+peaks is a direct check on the transcription: for `'2412'`, maximum
+camber $0.02$ at $x = 0.4$ and maximum thickness $0.12$ near
+$x = 0.3$ – camber $2\%$ at $40\%$ chord, thickness $12\%$, exactly
+the three digits the name promises.
+
+:::{figure} ../figures/generated/ch07-airfoil.svg
+:width: 75%
+
+The NACA 2412 outline `naca4_points` produces, with its two
+ingredients drawn in: the camber line (dashed), peaking at $2\%$ of
+chord at $x=0.4$, and the thickness distribution, $12\%$ of chord at
+its widest, laid perpendicular to the camber line.
+:::
 
 The **spine** – the curve the wing bends along – is built the same way
 Chapter 6 built any interpolating curve: a handful of points, one
@@ -285,9 +367,6 @@ Chapter 6 built any interpolating curve: a handful of points, one
 coordinates in that short list, not separate parameters to compute:
 
 ```python
-import math
-from cadquery import func as cf
-
 SWEEP_DEG, HALF_SPAN = 32.0, 32000.0
 sweep = math.tan(math.radians(SWEEP_DEG))
 
@@ -317,8 +396,8 @@ def profile_at(frac, chord):
 ```
 
 The very first station is worth placing a fraction of a percent inside
-the spine's own start, not exactly on it: a global interpolating
-spline's own endpoint tangent is whatever the solver's end condition
+the spine's start, not exactly on it: a global interpolating
+spline's endpoint tangent is whatever the solver's end condition
 produces, the same free-end fact Chapter 6 established, not necessarily
 the direction the curve appears to be heading a moment later. Evaluating
 `spine.tangentAt(0.0, ...)` directly returns a real but misleading
@@ -346,16 +425,20 @@ lofted into one solid – root at the left.
 :::
 
 :::{note} Try It
-- Thread a coolant channel through the hex-packed cell grid from Chapter
-  4's own exercise: a `cf.sweep`'d tube along a path that bends around
-  the cells rather than through them, `transition="round"` at each turn.
-  Check, in the viewer, that the tube's own solid does not overlap any
-  cell.
-- Build the lid this chapter's Loft section only described: a rounded
-  rectangle at the tray's own base, a smaller one drafted inward at the
-  top, lofted and then `cf.hollow`ed for wall thickness. Place it over
-  the Chapter 4 tray in the viewer and confirm it actually closes over
-  the pockets rather than cutting into them.
+- Seat cells in the hex-packed tray from Chapter 4's exercises and
+  thread a coolant channel between them: a `cf.sweep`'d tube along a
+  path that bends around the cells rather than through them,
+  `transition="round"` at each turn. Check the clearance in code rather
+  than by eye: the tube's intersection with every cell should come back
+  with zero volume.
+- Build the lid this chapter's Loft section described: a rounded
+  rectangle at the tray's base (`cf.fillet2D`, applied to a face's
+  vertices, rounds the corners), a smaller one at the top, lofted, with
+  the wall made by subtracting a second loft of inward-offset profiles.
+  If you reach for `cf.hollow` as the shortcut instead, run `isValid()`
+  on what it hands back before trusting it. Place the lid over the
+  Chapter 4 tray in the viewer and confirm it closes over the pockets
+  rather than cutting into them.
 - Change the wing's spine: move its last control point to a sharper bend
   or a taller rise and re-loft. At what bend does `cf.loft` stop
   producing a valid solid, and does `isValid()` actually catch the point
