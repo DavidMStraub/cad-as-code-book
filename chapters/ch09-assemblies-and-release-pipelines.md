@@ -42,10 +42,47 @@
 %   geometric_diff(a, b) - cf has no dedicated symmetric-difference
 %   operator. Verified on two plate revisions with a moved mounting hole:
 %   isValid True, 2 solids, 141.287... mm^3.
-% - The enclosure generator from Ch. 4's own Try It was never built in the
-%   book text, so the release-pipeline batch example runs over Ch. 4's own
+% - The enclosure generator from Ch. 4's exercises was never built in the
+%   book text, so the release-pipeline batch example runs over Ch. 4's
 %   named CellSpec variants (18650, 21700) instead - real code already on
 %   the page.
+% 2026-07-11 pass: intro paragraph added; "X's own" tics + two brand
+% mentions swept. Three substantive fixes:
+% (1) fixture_for had the centered-box bug AGAIN (the exact ch2/ch3
+%     lesson): block.translate((0,0,h/2)) put the block at z 35..105
+%     while the grown cell spans -0.3..65.3 - the "pocket" was a dent in
+%     the block's underside, isValid True and plausible volume (55014),
+%     a textbook valid-but-wrong. Fixed: base-up block (30,30,50), grown
+%     part raised by floor=5 - verified: pocket opens at the top with
+%     opening area exactly the grown body's cross-section (271.7 mm^2),
+%     cell rests on the floor and protrudes 20 mm. Two intermediate fix
+%     attempts failed and taught the geometry: floor=4 with h=70 left a
+%     0.7 mm roof over the body (grown top is 65.3, only the terminal
+%     broke through) - a holding fixture must be SHORTER than the part.
+% (2) make_cell had been re-defined with loose (r_cell, h_cell) numbers -
+%     the exact mismatched-numbers anti-pattern Ch. 4's CellSpec section
+%     warns about, under the same function name as Ch. 4's spec-taking
+%     version. Now uses Ch. 4's CellSpec/make_cell verbatim;
+%     battery_module takes a CellSpec; the variants dict holds CellSpecs
+%     built with replace(), echoing Ch. 4's idiom. BOM output strings
+%     unchanged (f"cell_{spec.r_cell}" prints the same cell_9.0/cell_10.5).
+% (3) tray()/cached_tray/fixture_for now carry the assert-isinstance
+%     narrowing Ch. 8 established - ch9 is the first post-Ch.8 chapter
+%     and its annotated functions returned bare boolean/import results
+%     that mypy would flag one chapter after teaching the fix.
+% Also: one sentence at the end of the release section connects the
+% pipeline to Ch. 8's CI gate (tests run before export) - the two
+% chapters previously never referenced each other.
+% Full chapter re-run end to end after these changes; all printed
+% outputs re-verified (see below where quoted).
+
+This chapter takes finished parts and turns them into a product:
+assembled into a named, colored structure, exchanged through the
+formats other tools actually read, and released – bill of materials,
+supplier file, and print file from one loop over the named variants.
+It closes with two smaller tools of the same trade: a fixture derived
+from an imported STEP file, and a geometric diff that shows what a
+revision changed in the shape itself.
 
 ## Assembling the Battery Module: Names, Colors, Locations
 
@@ -60,20 +97,24 @@ matter – a single fused lump has no way to say "this half is aluminum,
 that one is a purchased cell." An **assembly** keeps shapes separate on
 purpose: a named tree of individual parts, each with its own placement,
 appearance, and identity, positioned relative to one another without
-ever merging their geometry. This is not a notion CadQuery invented for
-its own convenience – product structure, an assembly's parts and their
+ever merging their geometry. This is not a notion invented for one
+library's convenience – product structure, an assembly's parts and their
 relative placements, is part of the STEP standard itself, the same
-industry-wide exchange format this chapter's own STEP section reaches
+industry-wide exchange format this chapter's STEP section reaches
 for; any CAD system reading a STEP assembly back expects to find
 exactly this kind of tree, not a single fused shape.
 
-Chapter 4's tray and Chapter 3's cell are exactly this kind of pair –
+Chapter 4's tray and cell are exactly this kind of pair –
 two parts that belong together but should never be fused into one –
-and they are what this chapter builds its own first assembly out of.
+and they are what this chapter builds its first assembly out of.
 `tray` returns Chapter 4's tray as a single function call rather than a
-loose script, and `make_cell` is Chapter 3's cell, unchanged:
+loose script – with the `assert isinstance` narrowing Chapter 8
+established, since its `-> Solid` is a promise about a boolean's
+result – and `CellSpec` and `make_cell` are Chapter 4's, unchanged:
 
 ```python
+from dataclasses import dataclass, replace
+
 from cadquery import Shape, Solid
 from cadquery import func as cf
 import cadquery as cq
@@ -92,17 +133,29 @@ def tray() -> Solid:
     pocket = pocket.translate((0, 0, TRAY_THICKNESS - pocket_depth))
     for i in range(3):
         result = result - pocket.translate(((i - 1) * 24.0, 0, 0))
+    assert isinstance(result, Solid)
     return result
 
 
-def make_cell(r_cell, h_cell, r_terminal=2.5, h_terminal=1.0):
+@dataclass
+class CellSpec:
+    r_cell: float
+    h_cell: float
+    r_terminal: float = 2.5
+    h_terminal: float = 1.0
+
+
+cell_18650 = CellSpec(r_cell=9.0, h_cell=65.0)
+
+
+def make_cell(spec: CellSpec):
     points = [
         (0, 0, 0),
-        (r_cell, 0, 0),
-        (r_cell, 0, h_cell - h_terminal),
-        (r_terminal, 0, h_cell - h_terminal),
-        (r_terminal, 0, h_cell),
-        (0, 0, h_cell),
+        (spec.r_cell, 0, 0),
+        (spec.r_cell, 0, spec.h_cell - spec.h_terminal),
+        (spec.r_terminal, 0, spec.h_cell - spec.h_terminal),
+        (spec.r_terminal, 0, spec.h_cell),
+        (0, 0, spec.h_cell),
         (0, 0, 0),
     ]
     return cf.revolve(cf.face(cf.polyline(*points)), (0, 0, 0), (0, 0, 1))
@@ -115,7 +168,7 @@ separate instead of combining their results into one shape:
 def battery_module() -> cq.Assembly:
     assy = cq.Assembly(name="battery_module")
     assy.add(tray(), name="tray", color=cq.Color("gray"))
-    cell = make_cell(9.0, 65.0)
+    cell = make_cell(cell_18650)
     for i in range(3):
         x = (i - 1) * 24.0
         loc = cq.Location((x, 0, TRAY_THICKNESS))
@@ -127,7 +180,7 @@ def battery_module() -> cq.Assembly:
 rather than `cadquery.func` – a structuring layer above individual
 shapes, not another geometry operation – so this is the first chapter
 to import both. The pattern for placing the three cells is a plain loop
-over `Location`s, the same idiom `tray()` itself used for its own three
+over `Location`s, the same idiom `tray()` itself used for its three
 pockets; `cq.Assembly` adds a name, a color, and a place in a tree on
 top of geometry this book already knows how to build, not a new way of
 building it.
@@ -148,7 +201,7 @@ relationship instead and letting a solver work the number out:
 ```python
 pair = cq.Assembly(name="pair")
 pair.add(tray(), name="tray")
-pair.add(make_cell(9.0, 65.0), name="cell", loc=cq.Location((0, 0, 50)))  # placeholder z
+pair.add(make_cell(cell_18650), name="cell", loc=cq.Location((0, 0, 50)))  # placeholder z
 
 pair.constrain("tray@faces@>Z", "cell@faces@<Z", "Plane")
 pair.solve()
@@ -157,15 +210,15 @@ print(pair.children[1].loc.toTuple())
 
 `"tray@faces@>Z"` selects the tray's topmost face with the same string
 selectors Chapter 5 already taught; `"Plane"` asks the solver to bring
-the cell's own bottom face into that plane, whatever `z` it takes to
+the cell's bottom face into that plane, whatever `z` it takes to
 get there. The placeholder `50` above is gone after `solve()` – the
 printed location's `z` comes back `6.0`, `TRAY_THICKNESS` itself,
 without that number appearing anywhere in this snippet. A `Plane`
 constraint positions the whole face-to-face relationship, not only the
 gap along one axis, so it fits a single, deliberate pairing like this
-one cleanly; `battery_module`'s own three cells stay a plain loop over
+one cleanly; `battery_module`'s three cells stay a plain loop over
 `Location`s instead, the same reason `tray()` preferred a loop to a
-more elaborate pattern tool for its own three pockets.
+more elaborate pattern tool for its three pockets.
 
 ## STEP: Exchanging Geometry with Metadata
 
@@ -199,12 +252,12 @@ correctly named and colored, not one anonymous lump.
 
 ## Choosing a Format: BREP and STL
 
-STEP is the right tool once geometry needs to leave this book's own
+STEP is the right tool once geometry needs to leave this book's
 scripts – for a supplier, a colleague, another CAD system entirely.
 Two more formats earn a place in this book for jobs STEP is not suited
 to.
 
-**BREP** is the kernel's own native serialization: the exact data
+**BREP** is the kernel's native serialization: the exact data
 structure the kernel already holds in memory, written to disk without
 translating it into anything else first. That skipped translation is
 what makes BREP both faster to write and read than STEP and, unlike
@@ -221,7 +274,9 @@ from pathlib import Path
 
 def cached_tray(cache_path: Path) -> Solid:
     if cache_path.exists():
-        return cf.Shape.importBrep(str(cache_path))
+        cached = cf.Shape.importBrep(str(cache_path))
+        assert isinstance(cached, Solid)
+        return cached
     result = tray()
     result.exportBrep(str(cache_path))
     return result
@@ -245,11 +300,11 @@ back into an exact shape.
 | Format | Geometry | Names / colors | Typical use |
 |---|---|---|---|
 | STEP | exact B-Rep | yes | exchange with another CAD system |
-| BREP | exact B-Rep, kernel-native | no | caching this book's own intermediate results |
+| BREP | exact B-Rep, kernel-native | no | caching intermediate results locally |
 | STL | triangle mesh, lossy | no | 3D printing, Chapter 10 |
 
 Two-dimensional drawings – dimensioned views, tolerances, title blocks
-– are the one exchange format this book will not cover: CadQuery's own
+– are the one exchange format this book will not cover: the library's
 drawing support is thin compared to a dedicated drafting tool, and a
 half-built treatment would cost pages without leaving the reader able
 to produce a drawing a machine shop would actually accept.
@@ -260,26 +315,27 @@ A design is not finished when it looks right in the viewer; it is
 finished when a supplier can manufacture it, a print farm can print a
 prototype, and whoever ordered the parts knows what is actually in the
 box. `battery_module` already builds one named variant; generalizing
-it to take a cell's own dimensions, rather than assuming the 18650's,
+it to take a `CellSpec`, rather than assuming the 18650's numbers,
 turns "build another variant" from copying a script into calling a
-function with different numbers:
+function with a different spec – the bundled-numbers argument Chapter 4
+made for `make_cell`, now paying off one level up:
 
 ```python
-def battery_module(r_cell: float, h_cell: float) -> cq.Assembly:
+def battery_module(spec: CellSpec) -> cq.Assembly:
     assy = cq.Assembly(name="battery_module")
     assy.add(tray(), name="tray", metadata={"part": "tray"})
-    cell = make_cell(r_cell, h_cell)
+    cell = make_cell(spec)
     for i in range(3):
         x = (i - 1) * 24.0
         loc = cq.Location((x, 0, TRAY_THICKNESS))
-        assy.add(cell, name=f"cell_{i}", metadata={"part": f"cell_{r_cell}"}, loc=loc)
+        assy.add(cell, name=f"cell_{i}", metadata={"part": f"cell_{spec.r_cell}"}, loc=loc)
     return assy
 ```
 
 A second function turns one assembly into the three things a release
 actually needs – a **bill of materials** (a part list with quantities),
 a STEP file for a supplier, an STL for a printed prototype – reading
-the part list straight from the assembly's own tree via `traverse()`
+the part list straight from the assembly's tree via `traverse()`
 and the `metadata` given to each `add`, rather than keeping it as a
 separate document that can drift out of sync with the model:
 
@@ -297,14 +353,14 @@ def release(assy: cq.Assembly, name: str) -> None:
     print(name, dict(counts))
 ```
 
-Driving both across Chapter 4's own named cell variants is now a
+Driving both across Chapter 4's named cell variants is now a
 two-line loop, not a script that has to be copied and edited per
 variant:
 
 ```python
-variants = {"18650": (9.0, 65.0), "21700": (10.5, 70.0)}
-for name, (r_cell, h_cell) in variants.items():
-    release(battery_module(r_cell, h_cell), name)
+variants = {"18650": cell_18650, "21700": replace(cell_18650, r_cell=10.5, h_cell=70.0)}
+for name, spec in variants.items():
+    release(battery_module(spec), name)
 ```
 
 ```
@@ -314,7 +370,11 @@ for name, (r_cell, h_cell) in variants.items():
 
 Nothing here is specific to two cell formats; the same loop over any
 number of named variants is Chapter 4's "three-format tray" exercise,
-run all the way to shippable files.
+run all the way to shippable files. In a real repository this loop is
+the *last* step of a release, behind the gate Chapter 8 built: the
+same CI job that runs the tests on every change runs them once more
+here, and a variant whose geometry fails its checks never reaches the
+`export` calls at all.
 
 ## A Fixture from an Imported STEP
 
@@ -322,15 +382,16 @@ Not every part this book generates started life as generated code.
 Chapter 1's adoption argument – automate around the CAD a shop already
 has, rather than insisting everything be modeled from scratch – has a
 concrete, small, and extremely common form: a **fixture**, a block
-machined to hold one specific part still, built as that part's own
+machined to hold one specific part still, built as that part's
 shape subtracted from a block with a little clearance added.
 
 ```python
-def fixture_for(part: Solid, clearance: float, block_size=(30, 30, 70)) -> Solid:
+def fixture_for(part: Solid, clearance: float, block=(30, 30, 50), floor=5.0) -> Solid:
     grown = part + cf.offset(part.Shells()[0], clearance)
-    w, d, h = block_size
-    block = cf.box(w, d, h).translate((0, 0, h / 2))
-    return block - grown
+    w, d, h = block
+    result = cf.box(w, d, h) - grown.translate((0, 0, floor))
+    assert isinstance(result, Solid)
+    return result
 ```
 
 Growing `part` uniformly by a clearance is not `cf.offset` applied
@@ -355,9 +416,12 @@ print(fixture.isValid(), fixture.Volume())
 `cell_solid` here came from a STEP file, not from `make_cell` – as far
 as `fixture_for` is concerned, it could be a supplier's part with no
 parametric description behind it at all, exactly the situation the
-adoption thread is about. Subtracting the grown copy from a block
-leaves a pocket the real, physical part will drop into with exactly
-`0.3` mm of clearance on every surface.
+adoption thread is about. Raising the grown copy by `floor` before
+subtracting leaves material under the part, and a block shorter than
+the part leaves the pocket open at the top: the real, physical cell
+drops in from above, rests on the 5 mm floor with `0.3` mm of
+clearance on every held surface, and stands proud of the block where a
+gripper or a probe needs to reach it.
 
 ## The Geometric Diff
 
@@ -396,7 +460,7 @@ hole's position – both real, both nonzero, both exactly where the two
 revisions actually disagree, and both far smaller than either hole
 itself because the two positions mostly overlap. Moving `hole_v2`
 further away – to `-10` rather than `-13` –
-makes each circle disagree with the other over most of its own area
+makes each circle disagree with the other over most of its area
 instead of a thin sliver at the edge; the diff is still exactly right,
 just no longer a good advertisement for how little actually changed.
 `git diff` shows this for the *script*; `geometric_diff` shows it for
@@ -417,7 +481,7 @@ The geometric diff between two plate revisions: the two crescents where
   changing.
 - Add a fourth constraint to the single-pair example: keep the cell's
   `Plane` constraint to the tray's top face, and add an `Axis`
-  constraint aligning the cell's own axis to the tray's normal. Does
+  constraint aligning the cell's axis to the tray's normal. Does
   `solve()` still place the cell the same way, and what changes if the
   cell starts out tipped over on its side?
 - Run `geometric_diff` between two revisions of Chapter 8's `cell_can`
