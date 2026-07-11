@@ -8,6 +8,33 @@
 % zero, but goes properly systematic here: every one of the seven B-Rep
 % element types gets a real definition, not just the four Ch. 2 needed.
 % Concepts are explained in prose first; code verifies, never substitutes.
+% 2026-07-11: intro paragraph added; seam walk-through now explains the
+% uses-vs-unique-elements distinction (show_topology prints the lateral
+% face's wire with FOUR edge entries - the seam twice - while Edges()
+% reports three; previously unexplained, a careful reader would trip);
+% orientation explanation corrected - opposite box faces do NOT share one
+% reflected plane, each has its own plane at its own origin, what they
+% share is the plane normal's direction (verified: both x-faces' plane
+% axes point along +x, xmax face FORWARD, xmin REVERSED); Ch. 4 callback
+% updated (locating boss replaced by the lead-in example there);
+% show_topology uses Shape.ShapeType() - returns clean names ("Solid"),
+% no OCP-level wrapped access needed. All
+% runnable claims re-verified in this environment: cylinder 3/3/2, shell
+% of 5 faces valid, shared-edge loop prints 2 centers, plate 7/15/29
+% appearances, fillet-vs-hole isValid()==False with Volume() 22551.5
+% (bare edge compound to fillet() works - iteration yields edges; only
+% [compound] in a list breaks), Edges()[13] CIRCLE->LINE after the
+% corner hole, RadiusNthSelector radius 5.0, STEP round-trip volume
+% delta 1.3e-10.
+
+This chapter opens the solid up. Chapter 2 counted a plate's faces,
+edges, and vertices and promised the full story later; this is that
+story: what a boundary representation is made of, how its pieces
+connect and share, what makes a shape readable as a solid at all, and
+why sub-shapes have no stable names – together with the selector
+tools that answer that last problem properly. The chapter closes
+where the structure pays off most directly: reading a STEP file
+written by software that has never heard of this book's stack.
 
 ## Geometry and Topology
 
@@ -74,7 +101,7 @@ structure is visible by walking it directly:
 
 ```python
 def show_topology(shape, indent=""):
-    print(indent + shape.wrapped.ShapeType().name)
+    print(indent + shape.ShapeType())
     for child in shape:
         show_topology(child, indent + "  ")
 
@@ -83,18 +110,34 @@ show_topology(cyl)
 ```
 
 Iterating a shape with a plain `for` loop walks exactly one level down
-its own topology, so calling `show_topology` recursively prints the
-whole nested tree beneath it. Run on the cylinder, it shows one solid,
-one shell, three faces – and the lateral face alone accounts for the
-missing structure: it has *three* edges in its own boundary, not one,
-because a cylindrical surface is a flat strip rolled into a tube, and
-the seam where the strip's two ends meet back up is a real edge, used
-twice by the same face rather than once each by two different faces.
-That seam edge needs a start and an end, and those two points are
-exactly the cylinder's two vertices – one where the seam meets the top
-rim, one where it meets the bottom. The top and bottom rims are each a
-single closed circular edge, sharing one vertex apiece with the seam.
-Three edges, two vertices, nothing left unaccounted for.
+its topology, so calling `show_topology` recursively prints the whole
+nested tree beneath it. Run on the cylinder, it shows one solid, one
+shell, three faces – and the lateral face accounts for the missing
+structure. A cylindrical surface is a flat strip rolled into a tube,
+and the **seam** where the strip's two ends meet back up is a real
+edge, used twice by the same face – its boundary runs up one side of
+the seam and back down the other. That seam needs a start and an end,
+and those two points are the cylinder's two vertices, one where the
+seam meets each rim; the rims themselves are each a single closed
+circular edge whose start and end are the same vertex. Three edges,
+two vertices, nothing left unaccounted for.
+
+The printed tree says the same thing in a way that rewards a careful
+look: the lateral face's wire lists *four* edge entries – the two
+rims, and the seam twice – where `Edges()` reported three, and each
+closed rim lists two vertex entries that are the same vertex in both
+roles, start and end. The walk visits every *use* of an element; the
+counting methods report each element once. The double appearances are
+the first sighting of a fact the rest of this chapter leans on:
+sub-shapes are shared, not copied.
+
+:::{figure} ../figures/generated/ch05-cylinder-seam.png
+:width: 22%
+
+The cylinder's edges are its real topology: two circular rims, and the
+seam running up the lateral face, whose two endpoints are the
+cylinder's only vertices.
+:::
 
 ## The B-Rep Vocabulary
 
@@ -102,9 +145,9 @@ Three edges, two vertices, nothing left unaccounted for.
 
 Chapter 2 used four kinds of shape without formally naming the whole
 family: a solid is bounded by faces, faces by edges, edges end at
-vertices. Seven kinds exist in total, each with its own dimension, its
-own idea of what bounds it, and – for four of them – its own kind of
-geometry attached.
+vertices. Seven kinds exist in total, differing in dimension, in what
+bounds them, and – for four of them – in the kind of geometry
+attached.
 
 A **vertex** is zero-dimensional: a single point in space, and nothing
 more. An **edge** is one-dimensional: a piece of a curve – a line, a
@@ -181,8 +224,8 @@ meet along that particular edge – because `edge in f.Edges()` is asking
 exactly the connectivity question: does this face's boundary include
 this specific, shared edge. Two edges are connected the same way, through
 a shared vertex, and the whole hierarchy can be walked top to bottom this
-way: a face's own edges, an edge's own vertices, without ever needing to
-know how many other faces or edges exist elsewhere in the shape.
+way: a face's edges, an edge's vertices, without ever needing to know
+how many other faces or edges exist elsewhere in the shape.
 
 Sharing is also the direct explanation for why a boolean operation
 changes a solid's element counts by more than the number of features
@@ -202,7 +245,7 @@ for the hole's cylindrical wall, the same "one hole, one face" rule that
 held for the cylinder alone. The last line prints 29, one short of
 thirty – and thirty is what fifteen edges would total if every one of
 them were shared by exactly two faces, the ordinary case. The shortfall
-is the hole's own seam edge, self-shared by its one curved face rather
+is the hole's seam edge, self-shared by its one curved face rather
 than shared between two different ones, exactly as it was for the bare
 cylinder. Fifteen edges is the plate's original twelve plus the hole's
 three (two rims, one seam); ten vertices is the plate's original eight
@@ -237,13 +280,16 @@ for f in box.Faces():
     print(f.wrapped.Orientation(), f.normalAt())
 ```
 
-Three of the box's six faces report `FORWARD`, three `REVERSED` – not
-arbitrary, but paired: opposite faces of a box share the same underlying
-infinite plane geometry (reflected through the origin), and one of each
-pair has to carry a flipped flag so that both actually point outward.
-`normalAt()` already resolves this: every printed normal points away
-from the box's own material, regardless of which raw flag the
-face happens to carry underneath. The same idea reaches one level
+Three of the box's six faces report `FORWARD`, three `REVERSED`, in
+pairs. Each face's underlying plane carries a normal direction as part
+of its geometry, and for a box the planes of two opposite faces point
+the same way – both x-faces' planes along +x, for instance. The face on
+the far side can use that direction as its outward normal unchanged:
+`FORWARD`. The face on the near side cannot, and `REVERSED` records
+precisely that disagreement between the face's material side and the
+arbitrary sense of its surface. `normalAt()` already resolves the two
+pieces: every printed normal points away from the box's material,
+whichever raw flag the face carries underneath. The same idea reaches one level
 deeper, into a face's own boundary: when a face has an inner wire – the
 rim of a hole, say – walking that inner wire has to trace the opposite
 sense from the outer contour, so that "material on this side" stays
@@ -272,19 +318,19 @@ This prints `False`, and a volume – a number, not an exception. The
 library built *something* and handed it back without complaint; only
 asking `isValid()` reveals it is broken. The hole here sits close enough
 to a corner that rounding the corner needs material the hole has already
-removed – the fillet's own construction has nothing left to build a
-rounded surface out of – and the result comes back with faces or edges
+removed – the fillet has nothing left to build a rounded surface
+from – and the result comes back with faces or edges
 that do not actually agree with each other, exactly the kind of
 inconsistency Orientation just described in the abstract. `isValid()`
-runs OCCT's own structural checker over the whole shape and every
+runs OCCT's structural checker over the whole shape and every
 sub-shape in it – closed wires, non-self-intersecting faces, correctly
-agreeing orientations, and more, documented exhaustively in OCCT's own
-reference for the checker rather than repeated here – and a result that
+agreeing orientations, and more, documented exhaustively in the
+checker's reference rather than repeated here – and a result that
 fails it should never be trusted downstream, whatever `Volume()` or
 `isValid()`-blind code might otherwise suggest. Filleting the corners
-*before* cutting the hole avoids the conflict entirely, the same
-lesson Chapter 4's locating boss taught on a different feature: know
-what an operation depends on, because the library will not stop to ask.
+*before* cutting the hole avoids the conflict entirely – the same
+dependency question Chapter 4 asked of the tray's features: know what
+an operation depends on, because the library will not stop to ask.
 
 ### The Topological Naming Problem
 
@@ -300,7 +346,7 @@ hole_rim = part.Edges()[13]
 print(hole_rim.geomType())
 ```
 
-This prints `CIRCLE`, correctly the hole's own rim, found once by
+This prints `CIRCLE`, correctly the hole's rim, found once by
 printing every edge until the right one turned up. Now the design
 changes – a second, smaller clearance hole is added near one corner, an
 entirely ordinary revision that has nothing to do with the first hole:
@@ -346,10 +392,12 @@ two combine by chaining calls, `faces(">Z").edges("%CIRCLE")`, narrowing
 a set of faces down before searching within it for the right edges.
 
 Some descriptions do not reduce to a short string, and `cadquery.selectors`
-provides a family of `Selector` objects for exactly that case – the
-string syntax's own escape hatch, not a separate system:
+provides a family of `Selector` objects for exactly that case – an
+escape hatch from the string syntax, not a separate system:
 
 ```python
+import math
+
 from cadquery.selectors import RadiusNthSelector
 
 plate = cf.box(60, 40, 10)
@@ -358,15 +406,18 @@ corner_hole = cf.cylinder(d=4, h=10).translate((26, 16, 0))
 part = plate - hole - corner_hole
 
 main_hole_rim = part.faces(">Z").edges(RadiusNthSelector(-1))
-print(main_hole_rim.Edges()[0].Length() / 6.283)
+print(main_hole_rim.Edges()[0].Length() / (2 * math.pi))
 ```
 
 `RadiusNthSelector(-1)` selects by radius rank – here, the largest
-circular edge on the top face – and this description survives the exact
-revision that broke `part.Edges()[13]`: add the corner hole, reorder the
-cuts, add a third hole later, and this line still finds the edge with
-the biggest radius, because that description was never a claim about
-where the edge sits in a list. `NearestToPointSelector`, `BoxSelector`,
+circular edge on the top face, printed back as its radius of `5.0` –
+and it is the sharper question Chapter 4 promised when a lead-in
+selector captured a mounting hole's rim it never meant to touch. The
+description also survives the exact revision that broke
+`part.Edges()[13]`: add the corner hole, reorder the cuts, add a third
+hole later, and this line still finds the edge with the biggest
+radius, because the description was never a claim about where the edge
+sits in a list. `NearestToPointSelector`, `BoxSelector`,
 `AreaNthSelector`, and a handful of others in the same module cover most
 of what a position-independent description needs; for anything left
 over, `Selector` is a plain base class with one method to
@@ -398,7 +449,7 @@ print(shape.ShapeType(), len(shape.Faces()), shape.isValid())
 show_topology(shape)
 ```
 
-`importStep` is the one place in this book where the library's own
+`importStep` is the one place in this book where the library's
 fluent `Workplane` is unavoidable – it is what the function returns –
 and `.val()` immediately drops back out of it to the plain `Shape` the
 rest of the book has used throughout. Everything from here on is exactly

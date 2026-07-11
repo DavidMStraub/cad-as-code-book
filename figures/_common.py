@@ -40,7 +40,8 @@ def _crop_to_content(path: Path, padding: int = CROP_PADDING) -> None:
     im.crop((left, top, right, bottom)).save(path)
 
 
-def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None):
+def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None,
+           edge_color=EDGE_COLOR):
     """Render one or more CadQuery Shapes to figures/generated/<name>.png."""
 
     if not isinstance(shapes, (list, tuple)):
@@ -58,7 +59,7 @@ def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None):
             shape.wrapped,
             color=color,
             edges=True,
-            edge_color=EDGE_COLOR,
+            edge_color=edge_color,
             line_width=LINE_WIDTH,
             smooth=True,
             opacity=1.0,
