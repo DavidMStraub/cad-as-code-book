@@ -964,14 +964,36 @@ $\mathbf{C}(u)$. A surface adds a second:
 
 $$\mathbf{S}(u, v) = \begin{pmatrix} x(u,v) \\ y(u,v) \\ z(u,v) \end{pmatrix}, \qquad u \in [u_0, u_1],\ v \in [v_0, v_1].$$
 
-Every `Face` in a B-Rep, Chapter 5's vocabulary again, carries exactly
-this: a surface, plus the two-parameter region that trims it to a
-finite patch – the direct analogue of what an `Edge` carries for a
-curve. Everything this chapter has proved about curves – polynomials
+The two parameters are coordinates *on* the surface, the way $u$ alone
+was a coordinate along a curve. For a plane they can literally be the
+in-plane $x$ and $y$; for a sphere they are longitude and latitude, the
+same two numbers that locate a point on the Earth; for a cylinder, the
+angle around and the height up. Freezing one parameter and letting the
+other run traces a curve that lies in the surface – an **isoline** –
+and the $u$- and $v$-isolines together form a coordinate grid drawn
+over the whole surface, the same grid CAD viewers and this book's
+figures use to make a curved face legible.
+
+Every `Face` in a B-Rep, Chapter 5's vocabulary again, carries a
+surface plus a trimmed region of its $(u,v)$ domain – but here the
+analogy with edges genuinely bends. An edge trims its curve with two
+numbers, an interval in $u$. A region of the $(u,v)$ plane is only
+that simple when its boundary happens to run along isolines – true for
+a cylinder's lateral face, bounded by the two rims and the seam, and
+for little else. Bore Chapter 2's hole through a plate and look at the
+top face: its outer boundary still follows the plane's isolines, four
+straight segments, but its inner boundary is a *circle drawn in the
+$(u,v)$ plane*, a curve no pair of parameter intervals can express.
+A face's trim is therefore not a rectangle of parameters but a set of
+boundary curves living in the parameter domain – which is why
+Chapter 5's hierarchy hangs whole wires on a face where an edge made
+do with two parameter values. Everything this chapter has proved
+about curves – polynomials
 failing to reach a circle, control points buying stability, weights
 buying exactness, continuity classes controlling how pieces join –
 restates one dimension up, faces instead of edges, without needing new
-mathematics. What is new is the second parameter itself: a curve has one
+mathematics. What the second parameter changes is the derivative
+picture: a curve has one
 tangent direction and one normal; a surface's tangent plane is spanned
 by two independent directions, $\mathbf{S}_u$ and $\mathbf{S}_v$, and its
 normal is their cross product, normalized to unit length – the
