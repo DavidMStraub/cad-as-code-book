@@ -22,6 +22,23 @@
 % pointer left at the end of §2. Canonical home (per the book-plan's
 % lookup table) for curve/surface math, NURBS, and continuity; must be
 % self-contained enough for a reader who jumps in here directly.
+% 2026-07-11: intro paragraph added; two stale "Fourier series" capstone
+% references fixed to the NACA wing Ch. 7 actually builds (the Fourier
+% cross-sections belonged to the cut W7-X vessel); the two
+% \begin{cases} formulas rewritten in side-condition form - the
+% tex-to-typst bug noted below is STILL live (verified in the built PDF:
+% both formulas rendered as "N =" with nothing after), and the rewrite
+% renders correctly everywhere rather than waiting on upstream;
+% Cox-de Boor subsection moved from the NURBS section into Building
+% Curves (it defines B-spline machinery; NURBS's opening no longer
+% leans on a "previous subsection" that had drifted anyway); "Curve
+% Properties in CadQuery" heading and two in-prose "CadQuery"s
+% reworded per the keep-the-brand-out-of-prose rule; "X's own" tic
+% swept. Spot-re-verified this session: ellipse length 97.01 /
+% curvatures 0.2, 0.025; offset edges all OFFSET; cylinder face
+% uvBounds (0, 2pi, 0, 30), positionAt (5,0,15), normalAt (1,0,0);
+% loft CONE,CONE vs BSPLINE; cf.fillet(box, edges, r) -> PLANE,
+% CYLINDER, SPHERE.
 %
 % Surfaces is a standalone "## Surfaces" heading, not a Continuity
 % subsection, written with comparable rigor to the curve sections
@@ -36,6 +53,16 @@
 % takes diameter not radius, verified by positionAt; ruled vs. smooth
 % loft geomTypes; toNURBS degree/pole counts on a cylinder).
 
+Chapter 5 said what an edge and a face carry – a curve, a surface, and
+the parameter ranges that trim them – and left the mathematics of those
+curves and surfaces open. This chapter fills it in: what a parametric
+curve is, and what tangent, arc length, and curvature mean on one; why
+the analytic curves run out the moment a real operation touches them;
+how control points, B-splines, and NURBS build the representation the
+rest of CAD stands on; and what continuity between the pieces means,
+with the places it genuinely matters. The same story restated one
+dimension up – surfaces – closes the chapter.
+
 ## Curves as Parametric Functions
 
 ### Explicit, Implicit, and Parametric Curves
@@ -47,7 +74,7 @@ write one down, and CAD kernels settled on one of them for a specific,
 checkable reason.
 
 Take the simplest curved shape there is – a circle of radius $R$, lying
-flat in a plane and centered on that plane's own origin – and ask how to
+flat in a plane and centered on the plane's origin – and ask how to
 write it down. The everyday answer from school algebra is **explicit**:
 $y$ as a function of $x$,
 
@@ -101,7 +128,7 @@ this section.
 
 ### Tangent and Arc Length
 
-The **tangent vector** is the parametrization's own derivative,
+The **tangent vector** is the derivative of the parametrization,
 
 $$\mathbf{T}(u) = \mathbf{C}'(u) = \frac{d\mathbf{C}}{du},$$
 
@@ -137,7 +164,7 @@ $$s(u) = \int_0^{u} \sqrt{a^2\sin^2 \tilde u + b^2\cos^2 \tilde u}\; d\tilde u$$
 
 is an *elliptic integral* – historically the very problem that gave that
 whole family of functions its name – with no elementary closed form at
-all. Arc length, in general, is not something a curve's own formula hands
+all. Arc length, in general, is not something a curve's formula hands
 over for free; it has to be found numerically, for the whole curve, every
 time it is needed.
 
@@ -201,13 +228,13 @@ $5$-millimeter radius of curvature, against $\kappa = 0.025$ at the round
 ends, a slack $40$ millimeters – an eightfold difference on a single,
 ordinary curve.
 
-### Curve Properties in CadQuery
+### Reading Curve Properties in Code
 
 Every formula above is independent of any particular software. This
 section asks one narrow, practical question: once a curve exists,
 wrapped in an `Edge` as Chapter 5 described (a curve plus the parameter
 interval that trims it), how does code actually read $\mathbf{C}(u)$,
-$\mathbf{T}(u)$, and $\kappa(u)$ back off it? CadQuery answers through
+$\mathbf{T}(u)$, and $\kappa(u)$ back off it? The library answers through
 the edge's `positionAt`, `tangentAt`, and `curvatureAt`. Two distinct
 parameters are on offer for the $u$ these methods take, and they are not
 interchangeable. `mode="parameter"` is the curve's own formula parameter,
@@ -266,7 +293,9 @@ exactly $ds/du = |\mathbf{C}'(u)|$ failing to be constant. Neither mode is
 wrong; `mode="parameter"` is cheap and silent about distance,
 `mode="length"` is what a toolpath or a hand tracing the curve actually
 experiences, and its cost is the arc-length machinery this section built,
-paid again on every call.
+paid again on every call. Both facts are worth pinning down as the kind
+of check Chapter 2 introduced, so a future edit that breaks either
+assumption announces itself:
 
 ```python
 assert abs(circle.curvatureAt(0.0) - 1 / 10) < 1e-9
@@ -292,7 +321,7 @@ $$\mathbf{C}_{\text{offset}}(u) = \mathbf{C}(u) + d\,\hat{\mathbf{n}}(u).$$
 Whether that formula reduces to something nameable depends entirely on how
 $\hat{\mathbf{n}}(u)$ behaves – and the previous section already
 worked out exactly that, for both curves in play here. A circle's normal
-always points straight through its own center, turning at the same
+always points straight through its center, turning at the same
 constant rate curvature promised; an ellipse's normal does not, since its
 curvature – the earlier $0.2$ against $0.025$ – is not constant either.
 
@@ -344,18 +373,18 @@ of this chapter does.
 
 ## Building Curves from Control Points
 
-A cross-section defined by a Fourier series in two angles – the kind
-Chapter 7's capstone actually builds – has no hope of matching any curve
-this book has named so far, not even after the family from the previous
-section is stretched to include every offset and every trim of every
-conic. What is needed is not one more named formula to add to the list,
+A wing section traced point by point from the NACA airfoil formula – the
+kind Chapter 7's capstone actually builds – has no hope of matching any
+curve this book has named so far, not even after the family from the
+previous section is stretched to include every offset and every trim of
+every conic. What is needed is not one more named formula to add to the list,
 but a way of writing curves that was never a short list to begin with:
 shapes described directly by the points that should pull them into place,
 with no fixed equation deciding in advance what kind of bend is possible.
 
 ### The Power Basis and Bezier Curves
 
-The most direct way to let a curve's own coefficients be freely chosen is
+The most direct way to let a curve's coefficients be freely chosen is
 the **power basis** – writing each coordinate as an ordinary polynomial in
 $u$:
 
@@ -377,7 +406,7 @@ operation anyone can do by eye. What is needed is a basis whose parameters
 are themselves points in space.
 
 Pierre Bézier, working at Renault on computer-aided automobile body
-design, published exactly that in 1962, and it shipped in Renault's own
+design, published exactly that in 1962, and it shipped in Renault's
 UNISURF system by 1968. A **Bézier curve** is written directly in terms of
 $n+1$ **control points** $\mathbf{P}_0, \ldots, \mathbf{P}_n$:
 
@@ -393,7 +422,7 @@ $$\sum_{i=0}^n B_{i,n}(u) = \sum_{i=0}^n \begin{pmatrix} n \\ i \end{pmatrix} u^
 which is exactly what "the weights of a weighted average" requires. That
 makes $\mathbf{C}(u)$, at every parameter value, a **convex combination**
 of the control points, and confines the whole curve to the convex hull of
-its own control polygon, never overshooting past the outermost points no
+its control polygon, never overshooting past the outermost points no
 matter how the interior ones are placed. At $u=0$, $B_{0,n}(0)=1$ and
 every other basis function vanishes, so the curve starts exactly at
 $\mathbf{P}_0$; by the same argument at $u=1$ it ends exactly at
@@ -460,7 +489,7 @@ requires. Matching position alone pins one point,
 $$\mathbf{a}_3 = \mathbf{b}_0;$$
 
 matching tangent direction too – using the derivative formula above at
-each segment's own end, $\mathbf{a}'(1)=3(\mathbf{a}_3-\mathbf{a}_2)$ and
+each segment's end, $\mathbf{a}'(1)=3(\mathbf{a}_3-\mathbf{a}_2)$ and
 $\mathbf{b}'(0)=3(\mathbf{b}_1-\mathbf{b}_0)$ – forces a second,
 
 $$\mathbf{b}_1 = 2\mathbf{b}_0 - \mathbf{a}_2,$$
@@ -484,7 +513,7 @@ nothing more elaborate, are still what SVG paths, PostScript and
 TrueType font outlines, and every vector illustration tool use for
 two-dimensional artwork; the figure below traces one such outline,
 control handles and all, directly from the font this page is set in.
-The kernel underneath this book's own tools
+The kernel underneath this book's tools
 keeps the curve as a first-class citizen too: `BEZIER` is a real
 `geomType` in its own right, distinct from `BSPLINE` – the shape a
 reader would meet importing a STEP file authored directly in Bézier
@@ -494,11 +523,11 @@ this book has had no reason to build by hand.
 :::{figure} ../figures/static/bezier-handles.svg
 :width: 45%
 
-The lowercase "c" of this book's own body font, Linux Libertine, traced
+The lowercase "c" of this book's body font, Linux Libertine, traced
 as twelve cubic Bézier segments. Every anchor (square or diamond) is
 itself a control point – the shared $\mathbf{a}_3=\mathbf{b}_0$ of two
 neighboring segments – and the handles extending from it are those
-segments' own remaining control points, $\mathbf{a}_2$ and
+segments' remaining control points, $\mathbf{a}_2$ and
 $\mathbf{b}_1$. At the square anchors the two handles are exactly
 collinear through the point, the mirrored $\mathbf{b}_1 = 2\mathbf{b}_0 -
 \mathbf{a}_2$ derived above, tangent-continuous by construction; at the
@@ -520,7 +549,7 @@ replacing it – a Bézier curve turns out to be one particular B-spline,
 not a different kind of object, a fact the end of this subsection makes
 precise. It sits at a specific point between the two extremes the
 previous subsection already built. A piecewise Bézier curve gives every
-span its own private set of control points – four, for cubic segments –
+span a private set of control points – four, for cubic segments –
 touching no other span's. A single Bézier curve is the opposite extreme:
 one span, every control point governing it at once. A B-spline curve is
 what a real overlap between those two looks like: each span is still
@@ -548,21 +577,22 @@ are simple enough to see directly. Degree $0$ (order $k=1$) is a bare
 step function, equal to $1$ on exactly one knot span and $0$ everywhere
 else,
 
-% Known toolchain bug: mystmd's typst math export (via the tex-to-typst
-% package it bundles) drops \begin{cases}...\end{cases} content entirely,
-% and \left\{...\right. crashes the typst compile (unbalanced delimiter).
-% No clean workaround found - manual \Biggl\{ + array crowds against the
-% "=" sign and doesn't vertically center. Left as correct LaTeX pending
-% an upstream fix; re-check next myst/tex-to-typst upgrade before PDF
-% proofing this chapter.
+% Formulas deliberately written in side-condition form, not
+% \begin{cases}: mystmd's typst math export (via the bundled
+% tex-to-typst) drops cases content entirely - both formulas rendered
+% as "N = " with nothing after the equals sign in the built PDF, still
+% reproducible 2026-07-11 - and \left\{...\right. crashes the typst
+% compile. If the upstream bug is ever fixed, these could be folded
+% back into cases form, but the side-condition form is correct and
+% renders in every target.
 
-$$N_{i,0}(u) = \begin{cases} 1 & t_i \le u < t_{i+1} \\ 0 & \text{otherwise,} \end{cases}$$
+$$N_{i,0}(u) = 1 \ \text{ for } t_i \le u < t_{i+1}, \qquad N_{i,0}(u) = 0 \ \text{ otherwise},$$
 
 and degree $1$ (order $k=2$), reached by combining two neighboring steps,
-is a triangular "hat" rising linearly across one span and falling
-linearly across the next:
+is a triangular "hat", zero outside its two spans, rising linearly
+across the first and falling linearly across the second:
 
-$$N_{i,1}(u) = \begin{cases} \dfrac{u - t_i}{t_{i+1}-t_i} & t_i \le u < t_{i+1} \\[4pt] \dfrac{t_{i+2}-u}{t_{i+2}-t_{i+1}} & t_{i+1} \le u < t_{i+2} \\[2pt] 0 & \text{otherwise.} \end{cases}$$
+$$N_{i,1}(u) = \frac{u - t_i}{t_{i+1}-t_i} \ \text{ for } t_i \le u < t_{i+1}, \qquad N_{i,1}(u) = \frac{t_{i+2}-u}{t_{i+2}-t_{i+1}} \ \text{ for } t_{i+1} \le u < t_{i+2}.$$
 
 Three control points $\mathbf{P}_0, \mathbf{P}_1, \mathbf{P}_2$ and the
 clamped knot vector $T=(0,0,1,2,2)$ – the endpoints repeated to order
@@ -624,7 +654,7 @@ ordinary Bézier joint would have shown at that point; and multiplicity
 $k$ forces the curve through that exact control point, no longer just
 attracted toward it. Repeating the very first and last knots $k$ times –
 a **clamped** B-spline – is the standard way to make a curve actually
-pass through its own first and last control points, the way a Bézier
+pass through its first and last control points, the way a Bézier
 curve already does everywhere; without that repetition, a B-spline's
 endpoints, like its interior, are only ever attracted toward the nearby
 control points, never pinned to them.
@@ -652,9 +682,9 @@ touched. That is fine when a designer is placing control points
 directly, shaping a curve by feel. It is the wrong tool for a different,
 equally common problem: a fixed set of points already exists – measured
 off a physical part, read off a table, sampled from a formula like the
-cross-sections a later chapter builds from a Fourier series – and what
-is needed is a curve that passes through every one of them, exactly,
-not a curve merely herded near them.
+airfoil sections Chapter 7 builds – and what is needed is a curve that
+passes through every one of them, exactly, not a curve merely herded
+near them.
 
 This is **interpolation**, and it is a different problem from everything
 built so far in this chapter: given data points
@@ -674,7 +704,7 @@ points close together – a curve whose speed roughly tracks how far
 apart its data actually is, rather than treating every gap as equally
 wide.
 
-`cf.spline` builds exactly this, and its own numbers confirm it directly
+`cf.spline` builds exactly this, and its numbers confirm it directly
 rather than by name alone:
 
 ```python
@@ -688,7 +718,7 @@ for a, b in zip(points, points[1:]):
 print(chord)
 ```
 
-Reading the curve's own knot vector back off it needs the same direct
+Reading the curve's knot vector back off it needs the same direct
 kernel access the exact-circle NURBS example later in this chapter
 needs, and it matches this hand-computed list exactly:
 `[0.0, 18.03, 36.06, 57.27, 79.63]` – chord length, not equal spacing,
@@ -718,11 +748,30 @@ $\mathbf{P}_0$ and $\mathbf{P}_6$, the clamped ends, coincide with a data
 point at all.
 :::
 
+### Cox-de Boor Recursion
+
+The step from $N_{i,0}$ and $N_{i,1}$, both given explicitly earlier, to
+the cubic basis functions this chapter has been plotting and using ever
+since is one formula, applied repeatedly:
+
+$$N_{i,k}(u) = \frac{u - t_i}{t_{i+k-1} - t_i}\, N_{i,k-1}(u) \;+\; \frac{t_{i+k} - u}{t_{i+k} - t_{i+1}}\, N_{i+1,k-1}(u).$$
+
+Each order-$k$ basis function is a weighted blend of two order-$(k-1)$
+neighbors, the weights sliding linearly from $0$ to $1$ across the
+interval each half spans – a direct generalization of the $N_{i,1}$
+hat, which is exactly this blend applied to two order-$0$ steps. Every
+property this chapter has used – the local support confined to $k$
+spans, the automatic $C^{k-2}$ continuity, the knot-multiplicity table –
+follows from this recursion, but reproducing that derivation adds
+machinery without adding a usable fact: this book's basis-function
+figures, and every claim resting on them, were computed with exactly
+this formula, applied by code rather than by hand.
+
 ## NURBS: Rational Curves and Exact Shape
 
-A B-spline generalizes Bézier the way the previous subsection made
-precise, but it still cannot do one perfectly ordinary thing: trace an
-exact circle. The reason is not a shortcoming of any particular
+A B-spline contains Bézier as a special case – the no-interior-knots
+extreme worked out above – but it still cannot do one perfectly
+ordinary thing: trace an exact circle. The reason is not a shortcoming of any particular
 construction – it is algebraic, and it holds for every polynomial
 B-spline no matter how many control points or how high the degree.
 Suppose $\mathbf{C}(t) = (x(t), y(t))$ is a polynomial curve of degree
@@ -731,8 +780,8 @@ that $x(t)^2 + y(t)^2 = R^2$ for every $t$, not just at a few sample
 points. The left side is itself a polynomial in $t$, of degree at most
 $2p$, and for it to equal the constant $R^2$ identically, every
 coefficient above the constant term must vanish. But the leading
-coefficient of $x(t)^2$ is the square of $x(t)$'s own leading
-coefficient – never negative, and zero only if that coefficient already
+coefficient of $x(t)^2$ is the square of the leading coefficient of
+$x(t)$ – never negative, and zero only if that coefficient already
 was. The same holds for $y(t)^2$, and two non-negative numbers sum to
 zero only if both do. Working down from the top degree, every
 non-constant coefficient of both $x(t)$ and $y(t)$ is forced to zero in
@@ -776,11 +825,10 @@ alone, sits exactly on it – not a closer approximation, the curve
 itself.
 :::
 
-CadQuery's own
-free-function API has no direct constructor for a weighted control-point
-curve like this one – `cf` builds circles and ellipses as analytic
-edges outright, never needing NURBS to get them exactly right in the
-first place – so this example is the one piece of geometry in the
+The free-function API has no direct constructor for a weighted
+control-point curve like this one – `cf` builds circles and ellipses as
+analytic edges outright, never needing NURBS to get them exactly right
+in the first place – so this example is the one piece of geometry in the
 chapter this book verifies against the kernel directly rather than
 building through the API it otherwise teaches throughout.
 
@@ -810,25 +858,6 @@ of its four edges. Nothing about that number was visible from the
 `OFFSET` type label alone; it only shows up once the curve is forced
 into the one representation general enough to measure every curve in
 this chapter on the same scale.
-
-### Cox-de Boor Recursion
-
-The step from $N_{i,0}$ and $N_{i,1}$, both given explicitly earlier, to
-the cubic basis functions this chapter has been plotting and using ever
-since is one formula, applied repeatedly:
-
-$$N_{i,k}(u) = \frac{u - t_i}{t_{i+k-1} - t_i}\, N_{i,k-1}(u) \;+\; \frac{t_{i+k} - u}{t_{i+k} - t_{i+1}}\, N_{i+1,k-1}(u).$$
-
-Each order-$k$ basis function is a weighted blend of two order-$(k-1)$
-neighbors, the weights sliding linearly from $0$ to $1$ across the
-interval each half spans – a direct generalization of the $N_{i,1}$
-hat, which is exactly this blend applied to two order-$0$ steps. Every
-property this chapter has used – the local support confined to $k$
-spans, the automatic $C^{k-2}$ continuity, the knot-multiplicity table –
-follows from this recursion, but reproducing that derivation adds
-machinery without adding a usable fact: this book's own basis-function
-figures, and every claim resting on them, were computed with exactly
-this formula, applied by code rather than by hand.
 
 ## Continuity
 
@@ -873,7 +902,7 @@ has. Four places where it stops being academic, for four different
 reasons:
 
 - **Manufacturing.** A milling toolpath is generated by offsetting the
-  design surface by the cutting tool's own radius – exactly the offset
+  design surface by the cutting tool's radius – exactly the offset
   construction from earlier in this chapter, run in three dimensions
   instead of two – and a curvature discontinuity in the design surface
   is a discontinuity in the tool's required contact point and
@@ -886,7 +915,7 @@ reasons:
   or "zebra stripes" – across the panel and looking at how they bend in
   the reflection. A $G^1$-only join leaves the stripe direction
   matched, so the surface looks smooth to a bare eye, but the stripe's
-  own curvature kinks visibly at the join – the inspection exists
+  curvature kinks visibly at the join – the inspection exists
   precisely because the naked eye, without the stripes, cannot see the
   defect this chapter's curvature comb just made visible directly.
 - **Aerodynamics.** A boundary layer's pressure gradient responds to
@@ -995,12 +1024,12 @@ print(p, side.normalAt(p))
 ```
 
 `CYLINDER`, and bounds `(0.0, 6.283, 0.0, 30.0)` – $u$ over a full turn,
-$v$ from $0$ to $30$, the cylinder's own height, matching the formula
+$v$ from $0$ to $30$, the cylinder's height, matching the formula
 above with nothing hidden. `positionAt(0.0, 15.0)` lands at
 `(5.0, 0.0, 15.0)`: radius $5$, half of the $10$-millimeter *diameter*
 `cf.cylinder` actually takes as its first argument, at half the
 $30$-millimeter height. `normalAt` there returns `(1.0, 0.0, 0.0)`,
-pointing straight out along the radius, away from the solid's own
+pointing straight out along the radius, away from the solid's
 material – the same rule Chapter 5's orientation section fixed for flat
 faces, confirmed here on a curved one.
 
@@ -1008,9 +1037,9 @@ faces, confirmed here on a curved one.
 
 Chapter 3's `extrude` and `revolve` already build surfaces, one profile
 curve at a time; this chapter can finally say what kind. Extrude a
-circular profile, and the swept surface inherits the profile's own
+circular profile, and the swept surface inherits the profile's
 analytic name; extrude the interpolating spline from earlier in this
-chapter instead, and it inherits that curve's own name just as directly:
+chapter instead, and it inherits that curve's name just as directly:
 
 ```python
 circle_profile = cf.face(cf.wire(cf.circle(10.0)))
@@ -1102,7 +1131,7 @@ print(surf.IsURational(), surf.IsVRational())
 ```
 
 `toNURBS` is the public API; reading degree and pole counts back off the
-result needs the same direct look at OCCT's own `Geom_BSplineSurface`
+result needs the same direct look at OCCT's `Geom_BSplineSurface`
 the exact-circle example used earlier, since neither number is exposed
 through `cf`. Degree $2$ in $u$, degree $1$ in $v$: the circular
 direction needs the same quadratic degree the exact quarter-circle curve
