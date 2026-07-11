@@ -12,10 +12,21 @@
 % chapter already solved.
 % 2026-07-11: intro paragraph added; §4 now closes the loop back to the tray
 % (tray_design_intent(make_cell(...)) - verified working). Empirical
-% claims re-verified in this environment: boss_then_fillet extra volume
-% exactly 0.0, fillet_then_boss exactly the boss's 150.8 mm^3;
-% BoundingBox().xlen exactly 18.0 / 21.0 (no tolerance slack) for the
-% revolved cells; mirror("YZ", basePointVector=...) signature current.
+% claims re-verified in this environment: BoundingBox().xlen exactly
+% 18.0 / 21.0 (no tolerance slack) for the revolved cells;
+% mirror("YZ", basePointVector=...) signature current.
+% §1 reworked same day, on David's judgment that the original locating-
+% boss/corner-fillet example was contrived (a material collision requires
+% a placement that is already a bug, and the boss never reappeared on the
+% tray). New anchor: selector re-evaluation - the code-CAD-specific order
+% dependence (a GUI tree pins persistent references; code re-runs the
+% query), demonstrated on the tray's real features (pocket lead-in fillet
+% vs. mounting hole). Verified: "%CIRCLE" on the top face captures 1 edge
+% before the hole exists, 2 after; both orders isValid()==True; volume
+% difference 2.593 mm^3. Note fillet() needs real Edge objects - pass
+% selection.Edges(), not the compound in a list (a multi-edge compound
+% raises TypeError; ch2's [hole_edge] only works because a single match
+% returns a bare Edge).
 
 A model whose dimensions are parameters is a model built to be
 rebuilt: every value might be different tomorrow, and the construction
@@ -30,12 +41,11 @@ over: three exercises that scale the same tray to a real pack.
 
 ## Building the Tray: Feature Order in Practice
 
-A cell needs somewhere to sit: a **tray**, a plate that will eventually
-carry a pocket to seat the cell and mounting holes to bolt it down. It is
-the natural next part to build after Chapter 3's cell, small enough to
-work through directly, and building it raises immediately a question
-every part with more than one feature raises: what order do the features
-go in?
+A cell needs somewhere to sit: a **tray**, a plate with a pocket to seat
+the cell and a mounting hole to bolt it down. It is the natural next part
+to build after Chapter 3's cell, small enough to work through directly,
+and building it raises immediately a question every part with more than
+one feature raises: what order do the features go in?
 
 A base shape is laid down first, almost always, and a part's finishing
 touches – fillets, chamfers – almost always go last, with material added
@@ -49,63 +59,72 @@ material to remove, a fillet needs an intact edge to round, ideally the
 last edge that will exist rather than one a later cut is about to
 consume.
 
-There is a real exception, and it is worth seeing on a small, self-contained
-example before the tray's features get involved: a small **locating
-boss** near one corner, a low round peg of the kind used to key a part's
-orientation on an assembly fixture.
+In code, one dependency reaches further than material: **selection**.
+Chapter 2 introduced selectors as the durable way to pick a face or an
+edge – durable against dimension change, so that `">Z"` keeps meaning the
+top face however thick the plate becomes. But a selector is a question,
+and it is answered by the geometry as it stands on the line where it is
+asked. Every feature built before that line changes what the question is
+asked about.
+
+The tray shows this directly. Its pocket gets a **lead-in** – a small
+round on the rim that guides the cell in during assembly – and its
+mounting hole is bored straight through the plate. Here are both, in two
+orders:
 
 ```python
 from cadquery import func as cf
 
 width, depth, thickness = 40, 30, 6
-locating_boss = cf.cylinder(d=8, h=3).translate((16, 11, thickness))
-
 plate = cf.box(width, depth, thickness)
-corners = plate.edges("|Z")
+pocket = cf.cylinder(d=18.6, h=3).translate((0, 0, thickness - 3))
+hole = cf.cylinder(d=3.4, h=thickness).translate((16, 11, 0))
 
-boss_then_fillet = (plate + locating_boss).fillet(8, corners)
-fillet_then_boss = plate.fillet(8, corners) + locating_boss
+base = plate - pocket
+lead_in = base.faces(">Z").edges("%CIRCLE")
+round_then_hole = base.fillet(1.0, lead_in.Edges()) - hole
 
-plain = plate.fillet(8, corners)
-print(boss_then_fillet.Volume() - plain.Volume())
-print(fillet_then_boss.Volume() - plain.Volume())
+base = plate - pocket - hole
+lead_in = base.faces(">Z").edges("%CIRCLE")
+hole_then_round = base.fillet(1.0, lead_in.Edges())
+
+print(round_then_hole.Volume() - hole_then_round.Volume())
 ```
 
-Both lines build the same plate, the same 8-millimeter corner fillet, the
-same locating boss – only the order differs, and neither result needs a
-validity checker to judge; looking is enough. `boss_then_fillet` adds the
-boss, then rounds the corner around it: the extra volume the boss should
-have contributed comes out to `0.0`. Rounding the corner removes whatever
-material sits in that region, including a boss already placed there – it
-disappears without a trace, and a boolean union that ran without
-complaint hides a feature that simply is not there anymore.
-`fillet_then_boss` rounds the corner first, then adds the boss at the
-same coordinates; this time the full boss volume appears, but those
-coordinates described the corner's original, sharp position – the corner
-is smaller now, and the boss ends up overhanging it, part of its base
-sitting over material that the fillet already took away.
+The two versions differ in one respect only: whether the hole already
+exists when the selector runs. In the first, `"%CIRCLE"` on the top face
+finds one circular edge – the pocket's rim – and the lead-in lands
+exactly there. In the second, the same two lines find *two* circular
+edges, and the mounting hole's rim is quietly rounded along with the
+pocket's – a rim that a screw head is supposed to seat flat against.
+Both scripts run without complaint, both produce valid solids, and the
+printed volume difference of `2.6` cubic millimeters is how the mistake
+announces itself, because nothing else will.
 
 :::{figure} ../figures/generated/ch04-tray-feature-order.png
 :width: 41%
 
-`fillet_then_boss`: the locating boss, placed at the corner's original
-coordinates, overhangs the corner's new, rounded boundary.
+`hole_then_round`: the selector, asked after the hole exists, finds two
+circular rims, and the mounting hole's rim is rounded along with the
+pocket's.
 :::
 
 The lesson is not "always finish last" – that would just be a different
-rule to follow blindly, and the tray fails both ways here regardless of
-which one it picks. The lesson is to ask what each operation actually
-depends on: a fillet depends on intact material near the edge it rounds,
-and will remove a feature sitting in the way without asking; a feature
-placed near a corner depends on where that corner actually ends up, not
-where it started. Base, add, subtract, finish remains a good default
-reading order for a script, because most of the time nothing in it
-conflicts – but that depends on the geometry, not on the convention
-itself, and it is worth checking, not assuming, whenever a finishing
-operation and a placed feature land close enough to compete for the same
-material. The deeper fix – reading the boss's position from the corner's
-actual, current geometry rather than a coordinate written down in
-advance – is exactly what Design Intent, next, is about.
+rule to follow blindly. The lesson is to ask what each operation actually
+depends on. A selector depends on every feature built before the line it
+sits on; a fillet, in the same quiet way, depends on intact material near
+the edge it rounds, and will consume a small feature placed in its path
+without asking. Base, add, subtract, finish remains a good default
+reading order because it usually keeps those dependencies pointing one
+way – but that is a property of the geometry, not of the convention, and
+worth checking whenever a finishing touch and a feature land close
+together. There are two honest fixes here: do the rounding while the
+pocket's rim is the only circular edge there is – order as the tool – or
+ask a more precise question, one that selects the rim by its radius
+rather than by circularity alone, so it cannot capture strangers. That
+second fix – constructions that say what they mean, instead of what
+happens to be true when the line runs – is exactly what Design Intent,
+next, is about.
 
 ## Design Intent: Deriving the Pocket from the Cell
 
