@@ -90,12 +90,42 @@
 %   function-is-testable principle opening §5; the "reimplementation"
 %   antipattern (test recomputes the function's own formula) after the
 %   pytest example; a refactor-keeps-tests-green Try It bullet.
+% 2026-07-11 pass: intro paragraph added; §Types opening corrected (its
+% "same practice since Chapter 2" claim went stale when David stripped
+% return hints from Chs. 3-7 on purpose - now says return annotations
+% were deliberately rare until this section supplies the machinery);
+% "Ch. 5" -> "Chapter 5"; two brand mentions reworded ("the library's
+% source", "specific to geometry"); ~13 "X's own" tics swept; new
+% figure ch08_cell_can.py (three-quarter cutaway of the finished can,
+% laid over per the ch12-buoy tall-figure lesson - the chapter never
+% showed its part). Spot-re-verified: bbox prints exactly "65.0 18.0"
+% (no tolerance slack), 4 faces plain / 5 filleted (TORUS rim),
+% too_thick prints "True 16540.5".
+% Domain-sweep test ADDED (David approved, in @pytest.mark.parametrize
+% form at his direction - stacked decorators for the cross product;
+% he'd reject a bare nested loop in review, and parametrize is also
+% semantically right: 16 named cases vs. a loop that stops at the
+% first failure). Verified: 4x4 grid of (r_outer, wall) all valid WITH
+% the cap in 0.2 s; WITHOUT the cap 8 of 16 combinations raise
+% StdFail_NotDone (every thin wall); worst |V - analytic|/analytic
+% across the grid is 0.00155, so rel=0.005 has 3x margin.
 % - Deliberately NOT added: TDD/red-green-refactor, unit-vs-integration-
 %   test distinction, the other X2 antipatterns beyond reimplementation,
 %   angle-unit-in-parameter-name convention (no natural landing spot yet
 %   - Ch. 3's rz= is CadQuery's own kwarg, already clarified inline as
 %   degrees) - scoped out as checklist bloat / no current landing point,
 %   not oversights.
+
+This chapter is about earning the word "trust": what it takes for a
+parametric model to behave correctly on inputs nobody hand-picked, and
+for that correctness to survive the model's next edit. The tools are
+an escalation – validating inputs before the kernel sees them, capping
+values where a geometric ceiling exists, checking the result's own
+volume, size, and topology, making type annotations into promises a
+checker verifies, and finally handing all of it to a test runner so it
+happens on every change. Habits from earlier chapters – Chapter 2's
+two-line `assert`, Chapter 5's `isValid()`, Chapter 7's
+valid-but-wrong tube – converge here into one systematic practice.
 
 ## Validating Parameters Before the Kernel Runs
 
@@ -134,7 +164,7 @@ def cell_can(r_outer: float, wall: float, height: float) -> Solid:
 cell_can(9.0, 2.0, 65.0)  # an ordinary 2 mm wall
 ```
 
-Nobody sits down and decides to make a wall as thick as the can's own
+Nobody sits down and decides to make a wall as thick as the can's
 radius. The dangerous combinations arrive a different way: `wall`
 computed from other quantities rather than typed in by hand – solved
 backward from a required inner volume, say, or read from a component
@@ -156,10 +186,10 @@ print(too_thick.isValid(), round(too_thick.Volume(), 1))
 
 This prints `True` and `16540.5` – exactly the volume of a solid
 cylinder with no cavity in it at all. At `wall == r_outer` the inner
-cylinder's own diameter is `0`; the kernel is willing to construct that
+cylinder's diameter is `0`; the kernel is willing to construct that
 degenerate cylinder, the cut removes essentially nothing from it, and
 the function hands back a can that is not hollow, still reporting
-itself valid. Ch. 5 already showed `isValid()` return `False` on a
+itself valid. Chapter 5 already showed `isValid()` return `False` on a
 shape with a perfectly ordinary-looking volume; this is the
 complementary failure – `isValid()` says `True`, and the shape is wrong
 in a way no validity checker is built to catch, because nothing about a
@@ -177,7 +207,7 @@ Standard_ConstructionError
 ```
 
 `r_outer - wall` is now negative, `cf.cylinder` is asked for a negative
-diameter, and the kernel's own construction code raises directly – a
+diameter, and the kernel's construction code raises directly – a
 bare, message-less error from the layer underneath. Whichever side of
 `wall == r_outer` the mistake lands on, the reader learns about it in
 the least useful way available: a wrong-but-valid part, or a crash with
@@ -225,7 +255,7 @@ def cell_can(r_outer: float, wall: float, height: float, rim_fillet: float = 1.0
 ```
 
 Called with `rim_fillet=5.0` against a 2 mm wall, this raises
-`StdFail_NotDone` – the kernel's own way of saying the rounding this
+`StdFail_NotDone` – the kernel's way of saying the rounding this
 asked for does not fit in the material given. Capping the radius
 before the fillet call, rather than catching the exception after it,
 keeps the function's result geometrically sane however the caller's
@@ -237,7 +267,17 @@ number is chosen:
 
 Requesting `1.0` mm and requesting `5.0` mm against the same 2 mm wall
 now build the identical, valid result – the second one silently
-capped to `0.9` mm rather than failing. The `0.45` is not a universal
+capped to `0.9` mm rather than failing.
+
+:::{figure} ../figures/generated/ch08-cell-can.png
+:width: 70%
+
+The can this chapter builds and rebuilds, cut open for the page: a
+2 mm wall and the rim fillet, requested at 1.0 mm and capped to
+0.9 mm.
+:::
+
+The `0.45` is not a universal
 constant; it is a margin under the theoretical `0.5 * wall` bound at
 which the fillet becomes tangent to itself, a safety factor for exactly
 this kind of geometrically motivated limit. It is not the right move
@@ -251,7 +291,7 @@ stays the right tool.
 ## Testing Geometry, Not Just Trusting It
 
 `isValid()` catches structural nonsense; it does not catch a can that is
-the wrong size. `cell_can`'s own material – outer cylinder minus inner
+the wrong size. The shape `cell_can` builds – outer cylinder minus inner
 cylinder – has a closed-form volume, and checking the function against
 it costs nothing a validity check does not already cost:
 
@@ -266,7 +306,7 @@ print(can.Volume() - analytic)
 
 This prints a number on the order of `1e-12` – floating-point noise, not
 a real discrepancy. The same idea, applied instead of assumed, would
-have caught this chapter's own earlier `wall == r_outer` failure
+have caught this chapter's earlier `wall == r_outer` failure
 immediately, without ever inspecting the shape by eye: `too_thick`, the
 solid cylinder `isValid()` reported as a perfectly good can, has a
 volume that matches a solid cylinder's formula, not a hollow one's –
@@ -274,7 +314,7 @@ exactly what this check is built to notice.
 
 A second property worth testing directly is one geometry alone cannot
 see: whether two cans, placed where a design puts them, actually
-collide. Chapter 4's own tray positions pocket cylinders on a grid at a
+collide. Chapter 4's tray positions pocket cylinders on a grid at a
 pitch chosen from the cell radius and a clearance; `cf.intersect` turns
 "do these two overlap" into a number instead of a look in the viewer:
 
@@ -300,7 +340,7 @@ rather than trusted from the formula that placed them.
 Two more properties are worth checking as a matter of course, because
 both are cheap and because either `wall == r_outer` or `wall > r_outer`
 from the first section would have looked wrong on sight, not just in a
-printed number: the can's own outer size, and how many faces its
+printed number: the can's outer size, and how many faces its
 boundary is built from.
 
 ```python
@@ -316,7 +356,7 @@ print(len(can.Faces()))
 ```
 
 `bbox.zlen` matches `height` and `bbox.xlen` matches `2 * r_outer` –
-both read directly off the can's own geometry rather than assumed from
+both read directly off the can's geometry rather than assumed from
 the parameters that were supposed to produce them, catching a scale
 error a volume check alone might miss, since two shapes can share a
 volume without sharing a size. Four faces – both cylinders, both end
@@ -329,8 +369,12 @@ intended, before looking at a single number.
 ## Types as Contracts
 
 Every version of `cell_can` so far has carried a return annotation,
-`-> Solid`, the same practice this book has followed on every function
-signature since Chapter 2. A type hint is a checked promise only where
+`-> Solid`. Parameter annotations have been routine since Chapter 2;
+return annotations on geometry, after a first appearance on
+`plate_with_hole`, have been deliberately rare in this book – a return
+type on kernel-produced geometry is a promise, and keeping it takes
+exactly the machinery this section introduces. A type hint is a
+checked promise only where
 something actually checks it: a type checker such as **mypy** or
 **pyright** reads a function's annotations and flags a mismatch before
 the code ever runs, far cheaper than a boolean or a fillet call into
@@ -356,7 +400,7 @@ error: Incompatible return value type (got "Shape", expected "Solid")
 `Shape` is the base class Chapter 5 introduced `Solid`, `Compound`,
 and the rest of the hierarchy as belonging to – the general type that
 covers all of them, used whenever the exact one is not yet known. In
-CadQuery's own source code, the `-` operator is declared to return
+the library's source code, the `-` operator is declared to return
 `Shape`, not `Solid` – and that is worth taking seriously rather than
 reading past, because a boolean's actual result genuinely depends on
 the geometry involved. Two solids that touch, overlap, or cancel out
@@ -366,7 +410,7 @@ depends on values only the kernel resolves at the moment it runs.
 Declaring the result as `Shape` is the *correct*, honest type for an
 operation like that – not a looser placeholder standing in for
 `Solid`, but the actual guarantee `-` is able to make ahead of time.
-`cell_can_unvalidated`'s own `-> Solid` was the real mistake here: it
+`cell_can_unvalidated`'s `-> Solid` was the real mistake here: it
 promised a narrower type than the operation it is built from can
 promise.
 
@@ -388,7 +432,7 @@ the time this line runs the assertion is close to a formality – cheap
 insurance against a case validation has already excluded, not a real
 branch. That is exactly what `assert` is for: a statement of something
 that must be true given correct code above it, not a guard against a
-value that might legitimately vary. `wall`'s own bounds get `if`/`raise`
+value that might legitimately vary. `wall`'s bounds get `if`/`raise`
 instead, further up, because they check a *caller's* input – something
 that can be anything a caller decides to pass, not an internal
 consequence of code already checked.
@@ -510,17 +554,44 @@ inside both the function and its own test, agreeing with each other
 and wrong together. `test_cell_can_matches_analytic_volume` avoids this
 by construction: `analytic` is a closed-form fact about a hollow
 cylinder's volume, independent of how `cell_can` happens to build one
-– not a restatement of `cell_can`'s own construction steps in a
+– not a restatement of `cell_can`'s construction steps in a
 different order. A unit test's real job is checking a function against
 a truth it does not already assume.
 
-Nothing about these two test functions is CadQuery-specific; `assert`
+Nothing about these two test functions is specific to geometry; `assert`
 states the invariant, `pytest.raises` states which input should fail
 and how, the same vocabulary any Python test suite uses. Run on its
 own, `pytest` reads a project's `tests/` directory, calls every
 function matching that name, and reports which passed and which did
 not – the same checks this chapter already ran by hand, now able to
 outlive the terminal they were first typed into.
+
+Both tests probe a single point of the domain, though – the same
+`(9.0, 2.0, 65.0)` every check in this chapter has used. The opening
+section defined robustness as behavior known across the *whole*
+domain, and `pytest` has a purpose-built tool for saying exactly that,
+`@pytest.mark.parametrize`: it runs one test body once per listed
+value, and two stacked decorators run the whole cross product.
+
+```python
+@pytest.mark.parametrize("r_outer", [6.0, 9.0, 12.0, 21.0])
+@pytest.mark.parametrize("wall", [0.5, 1.0, 2.0, 4.0])
+def test_cell_can_across_the_domain(r_outer, wall):
+    can = cell_can(r_outer, wall, height=65.0)
+    analytic = math.pi * (r_outer**2 - (r_outer - wall) ** 2) * 65.0
+    assert can.isValid()
+    assert can.Volume() == pytest.approx(analytic, rel=0.005)  # fillet trims < 0.2%
+```
+
+Sixteen test cases from one function, each reported under its own
+name, so a failure names the exact combination that broke – where a
+plain loop over the same grid would stop at the first bad one and hide
+the rest. The whole grid builds and checks in under two seconds, and it
+earns its keep: remove the `rim_fillet` cap from two sections ago and
+half of these sixteen combinations – every thin-walled one – crash
+with `StdFail_NotDone`. This one test is what protects that soft limit
+from being simplified away by a later edit that never saw the
+reasoning behind it. The checked corner has become the checked domain.
 
 A test that only runs when a person remembers to run it is still only
 as reliable as that person's memory, though – exactly the gap between
@@ -559,7 +630,7 @@ call.
   named `CellSpec` variants at once.
 - Rebuild `cell_can`'s outer and inner cylinders with `extrude` on a
   circular profile instead of `cf.cylinder`, and rerun this chapter's
-  own tests unchanged. A test suite that does not need to change when
+  tests unchanged. A test suite that does not need to change when
   the implementation does is what makes a rewrite like this safe to
   attempt in the first place.
 :::
