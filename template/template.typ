@@ -120,7 +120,7 @@
         PART #part-counter.display("I")
       ]
       #v(0.5cm)
-      #text(font: sans-font, size: 2.6em, weight: "bold", fill: luma(30), it.body)
+      #text(font: sans-font, size: 2.6em, weight: "bold", fill: accent, it.body)
       #v(0.5cm)
       #line(length: 30%, stroke: 1.5pt + accent)
       #v(3fr)
