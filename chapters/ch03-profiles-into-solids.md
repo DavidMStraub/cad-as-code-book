@@ -1,5 +1,13 @@
 # Profiles into Solids
 
+This chapter turns flat outlines into solid parts, and it builds
+battery cells to do it: a prismatic cell, extruded from a rectangular
+profile and given terminals on its top face, and a cylindrical 18650
+cell, revolved from a half-profile. Along the way the book's spatial
+vocabulary arrives: planes, locations read from existing geometry
+rather than computed by hand, and rotations – the first operation in
+the book where the order of two movements changes the result.
+
 ## From Flat to Solid
 
 Every solid built so far has come from a primitive – a box, a cylinder –
@@ -17,9 +25,8 @@ outline lying in a plane, called a **profile**. A profile is not a sketch
 in the loose sense of a drawing – it is an exact **face**, the same kind of
 object that already bounds every solid this book has built, just one that
 happens to be flat and not yet part of any solid. Where does a profile
-live in space? By default, in the plane that already has a name from
-Chapter 1's discussion of coordinate axes: the **XY plane**, spanned by the
-x- and y-axes at height zero. CadQuery gives this plane, and two others
+live in space? By default, in the **XY plane**, spanned by the x- and
+y-axes at height zero. CadQuery gives this plane, and two others
 used constantly enough to deserve their own names, ready-made constants:
 
 ```python
@@ -81,17 +88,19 @@ builds throughout.
 The extruded housing: 27 by 148 by 91 millimeters.
 :::
 
-Nothing about this result could not have been written directly as
-`cf.box(27, 148, 91)`; extrude and a primitive box agree exactly when the
+This result could just as well have been written `cf.box(27, 148, 91)`;
+extrude and a primitive box agree exactly when the
 profile is a plain rectangle and the push runs straight along its normal.
 The two stop agreeing the moment the profile is anything else – a shape
 with a notch, a chamfered corner, an outline traced point by point – and
 that is the case extrude exists for. This chapter's second worked shape,
 later in the chapter, is exactly such a case.
 
-% Verify against installed CadQuery 2.8: exact keyword names and default
-% centering behavior for cf.rect (extrude's own signature is confirmed:
-% extrude(s: Shape, d: VectorLike, both: bool = False, ...) -> Shape).
+% Verified against installed CadQuery 2.8 (2026-07-11): cf.rect(w: float,
+% h: float) -> Wire, centered on the origin in the XY plane at z=0
+% (checked via BoundingBox: x in [-13.5, 13.5], y in [-74, 74], z=0 for
+% rect(27, 148)); extrude(s: Shape, d: VectorLike, both: bool = False,
+% ...) -> Shape.
 
 For an outline with no simple name, a profile can be built point by point
 and closed into a face directly:
@@ -114,25 +123,21 @@ outline `face` cannot turn into a surface. Curved segments – arcs, splines
 the profile a face is built from need not be straight-edged at all.
 
 Passed to `extrude` exactly as the rectangle was, this notched outline
-would produce a housing with a notch running its full height, which no
-single primitive shape could produce directly. The housing built for this
-chapter does not need one, and keeps the plain rectangular profile; the
-notched version above exists only to show that extrude's real domain is
-broader than a box.
+produces a housing with a notch running its full height – a shape no
+single primitive yields directly. The cell housing itself keeps the plain
+rectangular profile; the notched one returns in the chapter's exercises.
 
 ## A Plane Derived from a Face
 
-The housing is only half a battery cell. A real prismatic cell has two
-terminals on its top face, and placing them raises a question Chapter 2's
-plain offsets could not quite answer: Chapter 2 built a stud on top of a
-brick by computing its height by hand – half the body's height plus half
-the stud's – and offsetting from the global origin. That works as long as
-the body's own height is known and fixed. The moment the housing's
-thickness becomes a variable – which, being a real design, it eventually
-will – every offset computed against global coordinates has to be
-recomputed by hand alongside it. There is a more durable way to say the
-same thing: *put the terminal on the housing's top face*, whatever height
-that face currently happens to be at.
+The housing is only half a battery cell: a real prismatic cell has two
+terminals on its top face. Chapter 2 placed a stud on top of a brick by
+offsetting it upward by the body's height, measured from the global
+origin, and that works as long as the height is a number known where the
+offset is written. The moment the housing's height becomes a variable –
+which, being a real design, it eventually will – every offset computed
+against global coordinates has to be recomputed alongside it. There is a
+more durable way to say the same thing: *put the terminal on the housing's
+top face*, wherever that face currently is.
 
 ```python
 top_face = housing.faces(">Z")
@@ -180,7 +185,7 @@ without error.
 The two terminals land 97 millimeters apart, symmetric about the housing's
 center, sitting on top of it rather than embedded in it or floating above
 it – and every one of these facts remains true no matter what the
-housing's own dimensions later become. This is **design intent** again, in
+housing's dimensions later become. This is **design intent** again, in
 a new form: the terminals' construction records *where they belong
 relative to the housing*, not a pair of numbers that happened to be
 correct once.
@@ -205,9 +210,9 @@ Spin that outline through 360 degrees and it sweeps out the full solid;
 draw the *whole* cross-section instead of half of it, and revolving it
 would try to occupy the same space twice.
 
-Concretely, this section builds a **cylindrical** battery cell – the round
-metal can most people already picture at the word "battery," scaled up,
-and the format used in laptops, power tools, and many electric vehicles.
+Concretely, this section builds a **cylindrical** battery cell – the
+round-can counterpart of the prismatic housing above, and the format used
+in laptops, power tools, and many electric vehicles.
 Cylindrical cells are sold in standardized sizes named after their own
 dimensions: a cell coded **18650** is, by that code alone, eighteen
 millimeters across and sixty-five millimeters tall – the "18" and the

@@ -48,10 +48,9 @@ Because the model is text, the standard instruments for working with text
 apply. Versions can be compared line by line, so a change is visible as a
 change, together with a recorded explanation of why it was made. Models can
 live in the same version-control systems used for software, with history,
-parallel branches, and review before changes are accepted. These are not
-exotic practices; they are the ordinary working conditions of every software
-project, and they become available to mechanical design at the moment the
-design becomes text. Conventional CAD formats, being opaque binaries, do not
+parallel branches, and review before changes are accepted. These are the
+ordinary working conditions of every software project, and they become
+available to mechanical design at the moment the design becomes text. Conventional CAD formats, being opaque binaries, do not
 support these operations on their content – which is why managing them
 requires dedicated infrastructure around the files rather than tools that
 look inside them.
@@ -288,8 +287,8 @@ needed for free-form geometry. Part III treats models as engineering
 artifacts inside a larger workflow: verified, assembled, exported, meshed,
 simulated, and searched by computation. Several examples run through more
 than one chapter – the battery pack, the enclosure generator, the clutch
-brick, the fixture, the free-form W7-X case study – so that individual
-techniques accumulate into larger designs.
+brick, the fixture – so that individual techniques accumulate into larger
+designs.
 
 The book can be read straight through, but it is also meant to be used by
 reference. Readers who are new to code-first CAD should begin at Chapter 2

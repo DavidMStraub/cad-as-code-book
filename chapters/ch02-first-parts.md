@@ -1,5 +1,13 @@
 # First Parts
 
+A first working part is a short script away. This chapter builds two:
+a plate with a rounded hole, and a clutch brick, exported at the end
+as a STEP file any CAD system can open. Between the first script and
+that file, the essential moves appear in order: creating primitive
+solids, placing and combining them, selecting the edge an operation
+should apply to, promoting dimensions to function parameters, and
+backing the result with a check.
+
 ## A First Solid
 
 A short script is enough to see how the pieces fit together. Setting up the
@@ -31,10 +39,10 @@ the result to the viewer.
 
 % Width compensated (64% declared for an intended ~41%): a typst layout bug
 % squares the percentage for a figure this close after a chapter's opening
-% heading + first code block (confirmed isolated to this one figure only;
-% every other figure in the book renders correctly at its plain declared
-% width). Re-check this if the surrounding prose changes enough to move
-% the figure's position on the page.
+% heading + first code block. 2026-07-11: the new chapter intro paragraph
+% changes which page this figure lands on, and with it whether the bug
+% fires - deliberately left alone for now, to be settled once the book's
+% content is stable and final layout starts.
 :::{figure} ../figures/generated/ch02-plate-with-hole.png
 :width: 64%
 
@@ -71,12 +79,12 @@ vocabulary.
 ## Selecting What You Mean
 
 Suppose the hole's edge should be rounded, top and bottom, but the plate's
-outer edges should stay sharp. The listing methods above return everything,
-without distinction; picking the right sub-shapes by counting through a
-list would break the moment a dimension changes and the count shifts.
-Alongside `Faces()` and `Edges()`, CadQuery has a second, lowercase family –
-`faces()`, `edges()` – that takes a **selector**: a short string describing
-a sub-shape by what it *is*, not by where it happens to sit in a list.
+outer edges should stay sharp. That requires naming one particular edge of
+the part – and hard-coding which one by its position in some internal list
+would break the moment a dimension changes and the order shifts. CadQuery's
+`faces()` and `edges()` methods solve this with a **selector**: a short
+string describing a sub-shape by what it *is* rather than by where it
+happens to sit in a list.
 
 ```python
 top_face = part.faces(">Z")
@@ -88,9 +96,7 @@ whichever position it happens to occupy internally. `"%CIRCLE"` filters for
 edges whose underlying curve is a circle, which among the top face's edges
 is exactly the rim of the hole; the plate's four straight outer edges are
 of a different kind and are excluded automatically. Called with no
-argument at all, `faces()` and `edges()` fall back to returning everything,
-exactly like their capitalized counterparts – the two families differ only
-in whether a selector is available, not in what they cover.
+argument at all, `faces()` and `edges()` simply return everything.
 
 With the right edge in hand, rounding it is one call:
 
@@ -163,7 +169,9 @@ that is needed.
 At this point the plate is no longer just a picture on the screen. It has
 been moved, combined, selected from, rounded, parameterized, and checked.
 That makes it worth stopping to ask what kind of object `part` actually is.
-A shape can list its own sub-shapes:
+A shape can list its own sub-shapes – `Faces()` and `Edges()`, capitalized,
+are the complete-list cousins of the selector-taking methods used earlier
+in this chapter:
 
 ```python
 print(len(part.Faces()), "faces")
@@ -224,9 +232,8 @@ hole did earlier in this chapter – so the body's top surface is simply at
 z = `height`, and moving a stud (itself starting base-first at z = 0) up
 by exactly that much places its base flush against the body's top, with
 nothing to embed and no gap to leave. Stacking two shapes that both start
-from their own base is addition, not an extra correction – it is *not*
-centering that makes this simple, but the fact that both primitives already
-agree on which end is the bottom.
+from their own base is plain addition: the two primitives agree on which
+end is the bottom.
 
 ```python
 import math
