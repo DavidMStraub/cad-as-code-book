@@ -144,9 +144,10 @@ def tray_hardcoded():
 ```
 
 This works, for exactly as long as the cell stays a 9-millimeter-radius
-18650. The moment the design moves to a different cell – a fatter
-21700-class cell, say – the `9.0` above does not update itself; it just
-sits there, quietly wrong. The alternative is to read the radius from the
+18650. The moment the design moves to a different cell – a fatter one in
+the 21700 format, say: 21 millimeters across, 70 tall, by Chapter 3's
+naming code – the `9.0` above does not update itself; it just sits
+there, quietly wrong. The alternative is to read the radius from the
 cell itself, rather than retype a number that has to match it by
 coincidence:
 

@@ -6,7 +6,10 @@ as a STEP file any CAD system can open. Between the first script and
 that file, the essential moves appear in order: creating primitive
 solids, placing and combining them, selecting the edge an operation
 should apply to, promoting dimensions to function parameters, and
-backing the result with a check.
+backing the result with a check. Both parts are simple enough to verify
+by eye and by hand calculation, which is what makes them the right place
+to meet techniques that reappear unchanged in the larger models of later
+chapters.
 
 ## A First Solid
 

@@ -1,12 +1,14 @@
 # Profiles into Solids
 
 This chapter turns flat outlines into solid parts, and it builds
-battery cells to do it: a prismatic cell, extruded from a rectangular
-profile and given terminals on its top face, and a cylindrical 18650
-cell, revolved from a half-profile. Along the way the book's spatial
-vocabulary arrives: planes, locations read from existing geometry
-rather than computed by hand, and rotations – the first operation in
-the book where the order of two movements changes the result.
+battery cells to do it – the individual sealed units a laptop's or an
+electric vehicle's battery pack is stacked from: one boxy, extruded
+from a rectangular profile and given terminals on its top face, and
+one cylindrical, revolved from a half-profile. Along the way the
+book's spatial vocabulary arrives: planes, locations read from
+existing geometry rather than computed by hand, and rotations – the
+first operation in the book where the order of two movements changes
+the result.
 
 ## From Flat to Solid
 
@@ -73,9 +75,12 @@ third, optional argument, `both`, extrudes symmetrically in both
 directions from the profile's own plane instead of only forward from it.
 
 The result is a box, 27 by 148 by 91 millimeters: the dimensions of a real
-lithium-ion battery cell of the 100-amp-hour class, in the format called
-**prismatic** – built in a flat, rectangular metal or laminate case, rather
-than the round metal can most people picture at the word "battery." The
+lithium-ion battery **cell**. A cell is the individual sealed unit a
+battery is built from – a laptop pack combines a handful of them, an
+electric vehicle's pack hundreds – and this one belongs to the format
+called **prismatic**: built in a flat, rectangular metal or laminate case,
+rather than the round metal can most people picture at the word
+"battery." The
 flat shape gives up a little of a cylindrical cell's structural simplicity
 in exchange for packing far more tightly against its neighbors, which is
 why prismatic cells are common wherever many of them are stacked into a

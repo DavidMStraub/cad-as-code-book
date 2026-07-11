@@ -290,6 +290,16 @@ than one chapter – the battery pack, the enclosure generator, the clutch
 brick, the fixture – so that individual techniques accumulate into larger
 designs.
 
+The worked examples are deliberately small: a plate with one hole, a
+brick with two studs, a tray for a single cell – each sized so that every
+line of its construction can be read, run, and checked on the page. The
+techniques are full-size. A production enclosure is built from the same
+booleans, selectors, derived dimensions, and parameter objects, applied
+more times and organized into more functions; what grows with a real part
+is the amount of code and the coordination it needs, and structure,
+tests, assemblies, and release processes – Part III's subjects – are how
+that growth is managed.
+
 The book can be read straight through, but it is also meant to be used by
 reference. Readers who are new to code-first CAD should begin at Chapter 2
 and build in order. Readers who already work inside an established CAD
