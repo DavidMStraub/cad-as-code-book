@@ -412,7 +412,7 @@ The geometric diff between two plate revisions: the two crescents where
 
 :::{note} Try It
 - Extend the release pipeline to Chapter 4's third named format, the
-  4680 cell from that chapter's capstone, and confirm the printed BOM
+  4680 cell from that chapter's exercises, and confirm the printed BOM
   picks it up as a new part without any other line in the loop
   changing.
 - Add a fourth constraint to the single-pair example: keep the cell's

@@ -150,7 +150,7 @@ Extrude pushed a profile along a straight line; revolve spun one
 around a fixed axis. This chapter adds the two operations that free
 the profile from both constraints: sweep, which carries it along an
 arbitrary path curve, and loft, which fits a surface through a
-sequence of profiles placed anywhere in space. The capstone composes
+sequence of profiles placed anywhere in space. The closing section composes
 them with Chapter 6's curves into a genuinely freeform part – a
 swept, tapered airliner wing that curves up into a winglet.
 

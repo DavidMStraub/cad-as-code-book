@@ -410,7 +410,7 @@ of this chapter does.
 ## Building Curves from Control Points
 
 A wing section traced point by point from the NACA airfoil formula – the
-kind Chapter 7's capstone actually builds – has no hope of matching any
+kind Chapter 7's wing actually builds – has no hope of matching any
 curve this book has named so far, not even after the family from the
 previous section is stretched to include every offset and every trim of
 every conic. What is needed is not one more named formula to add to the list,
