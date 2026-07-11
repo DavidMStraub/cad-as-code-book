@@ -39,6 +39,27 @@
 % uvBounds (0, 2pi, 0, 30), positionAt (5,0,15), normalAt (1,0,0);
 % loft CONE,CONE vs BSPLINE; cf.fillet(box, edges, r) -> PLANE,
 % CYLINDER, SPHERE.
+% Same day, per David: Surfaces opening expanded - u,v explained as
+% coordinates ON the surface (plane -> in-plane x,y; sphere ->
+% longitude/latitude; cylinder -> angle/height), isolines named, and
+% the trimming asymmetry stated plainly (an edge trims with an interval;
+% a face's boundary curves live in the (u,v) domain and are isolines
+% only in special cases - plate-with-hole top face as the worked
+% contrast). New figure ch06_surface_uv.py: the smooth loft with its
+% isoline grid overlaid (sampled via Face.positionAt, near-white lines
+% like the ch05 seam figure; u/v arrows + labels drawn in image space
+% with PIL - in-scene VTK labels were unreadable and screenshot(scale=2)
+% drops 2D text actors).
+% Parameter-range claim verified three levels deep (David asked, since
+% build123d always shows [0,1]): Geom_CylindricalSurface.Value(pi, 15)
+% = (-5, 0, 15), BRepTools.UVBounds = (0, 2pi, 0, 30), and cq
+% Face.positionAt(pi, 15) matches - cq passes OCCT's native parameters
+% through unchanged; the loft face's [0,1]x[0,1] is the B-spline knot
+% range, also native. build123d's position_at normalizes to [0,1] as a
+% wrapper convention - Appendix B phrasebook material, not for this
+% chapter's prose. The old "direct analogue of what an Edge
+% carries" sentence was overclaiming exactly this point and is gone;
+% also fixed a backward-looking tic in the normalAt sentence.
 %
 % Surfaces is a standalone "## Surfaces" heading, not a Continuity
 % subsection, written with comparable rigor to the curve sections
@@ -974,6 +995,20 @@ and the $u$- and $v$-isolines together form a coordinate grid drawn
 over the whole surface, the same grid CAD viewers and this book's
 figures use to make a curved face legible.
 
+:::{figure} ../figures/generated/ch06-surface-uv.png
+:width: 35%
+
+A surface curved in both parameter directions – the smooth loft this
+section builds below – with its coordinate grid drawn on: holding $u$
+fixed traces the curves running the surface's length, holding $v$
+fixed the rings around it, and the arrows mark the two directions of
+increase. Every point on the patch is named by its two parameters,
+exactly as $u$ alone named every point on a curve; what range the
+numbers run over is each surface's private convention – $0$ to $2\pi$
+around a cylinder, $0$ to $1$ in both directions on this lofted
+B-spline patch.
+:::
+
 Every `Face` in a B-Rep, Chapter 5's vocabulary again, carries a
 surface plus a trimmed region of its $(u,v)$ domain – but here the
 analogy with edges genuinely bends. An edge trims its curve with two
@@ -996,10 +1031,8 @@ mathematics. What the second parameter changes is the derivative
 picture: a curve has one
 tangent direction and one normal; a surface's tangent plane is spanned
 by two independent directions, $\mathbf{S}_u$ and $\mathbf{S}_v$, and its
-normal is their cross product, normalized to unit length – the
-direction Chapter 5's `normalAt()`
-already returned, every time, without this chapter's machinery behind
-it named yet.
+normal is their cross product, normalized to unit length – this
+cross product is what Chapter 5's `normalAt()` computes.
 
 ### Parametric Surfaces and the Analytic Family
 

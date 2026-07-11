@@ -41,8 +41,15 @@ def _crop_to_content(path: Path, padding: int = CROP_PADDING) -> None:
 
 
 def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None,
-           edge_color=EDGE_COLOR):
-    """Render one or more CadQuery Shapes to figures/generated/<name>.png."""
+           edge_color=EDGE_COLOR, annotate=None, window_size=WINDOW_SIZE, scale=SCALE):
+    """Render one or more CadQuery Shapes to figures/generated/<name>.png.
+
+    `annotate`, if given, is called with the pyvista plotter after the
+    camera is set up and before the screenshot - for labels, arrows, and
+    other markup on top of the CAD shapes. NOTE: `screenshot(scale=2)`
+    silently drops 2D actors such as point labels - figures that use
+    text labels must pass scale=1 and a proportionally larger
+    window_size instead (same output resolution, labels kept)."""
 
     if not isinstance(shapes, (list, tuple)):
         shapes = [shapes]
@@ -50,7 +57,7 @@ def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None,
         colors = [FILL_COLOR] * len(shapes)
 
     pv.OFF_SCREEN = True
-    plotter = pv.Plotter(off_screen=True, window_size=WINDOW_SIZE)
+    plotter = pv.Plotter(off_screen=True, window_size=window_size)
     plotter.background_color = BACKGROUND
 
     for shape, color in zip(shapes, colors):
@@ -71,8 +78,11 @@ def render(shapes, name, *, azimuth_offset=20, elevation_offset=0, colors=None,
     plotter.enable_parallel_projection()
     plotter.reset_camera()
 
+    if annotate is not None:
+        annotate(plotter)
+
     GENERATED_DIR.mkdir(exist_ok=True)
     out_path = GENERATED_DIR / f"{name}.png"
-    plotter.screenshot(str(out_path), scale=SCALE)
+    plotter.screenshot(str(out_path), scale=scale)
     _crop_to_content(out_path)
     print(f"wrote {out_path}")
