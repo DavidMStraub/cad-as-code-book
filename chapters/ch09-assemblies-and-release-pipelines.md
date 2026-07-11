@@ -75,6 +75,31 @@
 % chapters previously never referenced each other.
 % Full chapter re-run end to end after these changes; all printed
 % outputs re-verified (see below where quoted).
+% Same day, on David's short-chapter/full-page-block assessment, two
+% additions (both approved): (1) the opening block is now models.py, an
+% importable module, with the models-as-a-library lesson stated
+% (importability = Ch. 8's testability, and what CI imports) -
+% subsequent blocks import from it (TRAY_THICKNESS/cell_18650/
+% make_cell/tray; Shape/Solid/cf re-imported at the cache block for
+% script scope; replace at the variants block). David caught that my
+% first version of this kept the FULL listing (same page, just
+% reframed - "I'm shocked"); the listing is now abridged to the file's
+% shape: signatures + CellSpec fields, `...` ellipsis bodies with
+% comments pointing at Chapter 4's printed lines. The full, runnable
+% models.py used for verification produces tray volume 15445.60 and
+% all outputs quoted below - the elided bodies are exactly Chapter 4's
+% code, so a reader can reconstruct the file from the book alone; (2) new section "A Pack
+% of Modules: Nesting Assemblies" - the chapter previously claimed
+% "tree" but only ever built flat assemblies. Verified: pack children
+% [module_0, module_1]; traverse finds 8 leaf parts across levels;
+% nested STEP round-trips with the full tree (each module reloads as a
+% child assembly containing tray + 3 cells); release() on a pack built
+% from the metadata-carrying battery_module prints
+% {'tray': 2, 'cell_9.0': 6} unchanged. Note the release-section pack
+% claim deliberately says "built from this metadata-carrying
+% battery_module": the pack section's battery_pack() binds to whatever
+% battery_module currently is, and the no-arg version carries no
+% metadata.
 
 This chapter takes finished parts and turns them into a product:
 assembled into a named, colored structure, exchanged through the
@@ -106,35 +131,24 @@ exactly this kind of tree, not a single fused shape.
 
 Chapter 4's tray and cell are exactly this kind of pair –
 two parts that belong together but should never be fused into one –
-and they are what this chapter builds its first assembly out of.
-`tray` returns Chapter 4's tray as a single function call rather than a
-loose script – with the `assert isinstance` narrowing Chapter 8
-established, since its `-> Solid` is a promise about a boolean's
-result – and `CellSpec` and `make_cell` are Chapter 4's, unchanged:
+and they are what this chapter builds its first assembly out of. They
+enter the chapter the way models enter any real pipeline: as a small
+library, `models.py`, holding Chapter 4's code and nothing else. The
+construction lines inside it are printed in Chapter 4 and stay
+unchanged, so only the file's shape is worth a listing:
 
 ```python
-from dataclasses import dataclass, replace
+# models.py
+from dataclasses import dataclass
 
-from cadquery import Shape, Solid
+from cadquery import Solid
 from cadquery import func as cf
-import cadquery as cq
 
 TRAY_THICKNESS = 6.0
 
 
 def tray() -> Solid:
-    width, depth = 100, 30
-    mounting_hole = cf.cylinder(d=3.4, h=TRAY_THICKNESS).translate((44, 12, 0))
-    mounting_holes = mounting_hole + mounting_hole.mirror("YZ", basePointVector=(0, 0, 0))
-    result = cf.box(width, depth, TRAY_THICKNESS) - mounting_holes
-
-    cell_radius, clearance, pocket_depth = 9.0, 0.3, 3.0
-    pocket = cf.cylinder(d=2 * (cell_radius + clearance), h=pocket_depth)
-    pocket = pocket.translate((0, 0, TRAY_THICKNESS - pocket_depth))
-    for i in range(3):
-        result = result - pocket.translate(((i - 1) * 24.0, 0, 0))
-    assert isinstance(result, Solid)
-    return result
+    ...  # Chapter 4's tray: plate, mirrored mounting holes, three pockets
 
 
 @dataclass
@@ -149,22 +163,27 @@ cell_18650 = CellSpec(r_cell=9.0, h_cell=65.0)
 
 
 def make_cell(spec: CellSpec):
-    points = [
-        (0, 0, 0),
-        (spec.r_cell, 0, 0),
-        (spec.r_cell, 0, spec.h_cell - spec.h_terminal),
-        (spec.r_terminal, 0, spec.h_cell - spec.h_terminal),
-        (spec.r_terminal, 0, spec.h_cell),
-        (0, 0, spec.h_cell),
-        (0, 0, 0),
-    ]
-    return cf.revolve(cf.face(cf.polyline(*points)), (0, 0, 0), (0, 0, 1))
+    ...  # Chapter 4's revolved cell profile, reading its numbers from spec
 ```
+
+Two details of the collection are new. Chapter 4's tray was a script;
+here its lines are wrapped into `tray()`, ending with the
+`assert isinstance(result, Solid)` narrowing Chapter 8 established,
+since `-> Solid` is a promise about a boolean's result. And the file
+is a **module**: the form in which models get reused. Every script in
+this chapter starts with an `import` from it instead of re-pasting
+construction code – the same importability that made Chapter 8's pure
+functions testable, and the file Chapter 8's test suite imports too.
 
 `cq.Assembly` is the structure that keeps calls to these two functions
 separate instead of combining their results into one shape:
 
 ```python
+import cadquery as cq
+
+from models import TRAY_THICKNESS, cell_18650, make_cell, tray
+
+
 def battery_module() -> cq.Assembly:
     assy = cq.Assembly(name="battery_module")
     assy.add(tray(), name="tray", color=cq.Color("gray"))
@@ -191,6 +210,43 @@ building it.
 The battery module: Chapter 4's tray in gray, three of Chapter 3's cells
 in blue, placed by the loop above.
 :::
+
+## A Pack of Modules: Nesting Assemblies
+
+An assembly's children can themselves be assemblies – the "tree" in
+the opening description is not a figure of speech. A pack built from
+several of the modules above adds each `battery_module()` result as a
+child, the same `add` call that placed individual parts:
+
+```python
+def battery_pack(n_modules: int = 2) -> cq.Assembly:
+    pack = cq.Assembly(name="battery_pack")
+    for i in range(n_modules):
+        loc = cq.Location((0, i * 40.0, 0))
+        pack.add(battery_module(), name=f"module_{i}", loc=loc)
+    return pack
+
+
+pack = battery_pack()
+print([child.name for child in pack.children])
+print(len([sub for _, sub in pack.traverse() if sub.obj is not None]))
+```
+
+```
+['module_0', 'module_1']
+8
+```
+
+The pack's direct children are the two modules; `traverse()` walks the
+whole tree, and counting the entries that carry geometry finds all
+eight leaf parts – two trays, six cells – across both levels of
+nesting. Each module's cells stay placed relative to *their* tray, and
+the module as a whole is placed once, by one `Location` – position
+composes down the tree, so nothing about `battery_module` needed to
+know it would ever be a child. The structure survives exchange, too:
+export the pack to STEP and load it back, and each module comes back
+as a child assembly with its tray and three cells inside it, the full
+tree rather than eight loose parts.
 
 ## Constraints: Solving for a Placement Instead of Computing It
 
@@ -270,6 +326,9 @@ rebuild it.
 
 ```python
 from pathlib import Path
+
+from cadquery import Shape, Solid
+from cadquery import func as cf
 
 
 def cached_tray(cache_path: Path) -> Solid:
@@ -358,6 +417,8 @@ two-line loop, not a script that has to be copied and edited per
 variant:
 
 ```python
+from dataclasses import replace
+
 variants = {"18650": cell_18650, "21700": replace(cell_18650, r_cell=10.5, h_cell=70.0)}
 for name, spec in variants.items():
     release(battery_module(spec), name)
@@ -368,7 +429,11 @@ for name, spec in variants.items():
 21700 {'tray': 1, 'cell_10.5': 3}
 ```
 
-Nothing here is specific to two cell formats; the same loop over any
+Nothing here is specific to two cell formats – or to flat assemblies:
+pointed at a two-module pack built from this metadata-carrying
+`battery_module`, `release` prints `{'tray': 2, 'cell_9.0': 6}`,
+`traverse()` walking the nesting without a line changing. The same
+loop over any
 number of named variants is Chapter 4's "three-format tray" exercise,
 run all the way to shippable files. In a real repository this loop is
 the *last* step of a release, behind the gate Chapter 8 built: the
