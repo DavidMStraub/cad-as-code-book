@@ -57,7 +57,22 @@
 % through unchanged; the loft face's [0,1]x[0,1] is the B-spline knot
 % range, also native. build123d's position_at normalizes to [0,1] as a
 % wrapper convention - Appendix B phrasebook material, not for this
-% chapter's prose. The old "direct analogue of what an Edge
+% chapter's prose.
+% Try It box added 2026-07-11 (the chapter had no exercises - the only
+% content chapter without them). All three verified solvable in this
+% environment first: sphere uvBounds (0, 2pi, -pi/2, pi/2), torus
+% (0, 2pi, 0, 2pi); single 5-pt spline curvature varies smoothly
+% around the middle data point (0.199 -> 0.207 across +-0.5% of
+% length) while two splines joined there disagree (0.0143 vs 0.0089,
+% and tangents mismatch - G0 joint); closed-profile offset2D returns
+% CIRCLE + OFFSET edges (10 total), the CIRCLEs being arc joins at the
+% closure corner. A fourth candidate (read the fillet patch's NURBS
+% degree/rational flags, "a fillet is the exact-circle machinery") was
+% DROPPED: BRep_Tool on the fillet's toNURBS gives UDegree 2 /
+% VDegree 1 but IsURational False / IsVRational True - a muddled
+% orientation story that would confuse rather than teach; don't re-add
+% without understanding why the rational flag lands on the linear
+% direction. The old "direct analogue of what an Edge
 % carries" sentence was overclaiming exactly this point and is gone;
 % also fixed a backward-looking tic in the normalAt sentence.
 %
@@ -1229,3 +1244,20 @@ same question at a lofted seam rather than a fillet's – the same
 curvature classes from this chapter's Continuity section, now decided
 per construction rather than derived from a control-point identity by
 hand.
+
+:::{note} Try It
+- Print `uvBounds()` for a sphere's face and a torus's face. Which of
+  the sphere's two parameters is longitude and which latitude – and
+  what do the torus's two $0$-to-$2\pi$ parameters each mean? Confirm
+  your reading by evaluating `positionAt` at a few chosen values.
+- The interpolating spline passes through its data points – how
+  smoothly? Sample `curvatureAt` at closely spaced parameters across
+  the middle data point of this chapter's five-point spline and watch
+  it change continuously, the $C^2$ promise made concrete. Then build
+  the same shape as *two* splines sharing that point and compare
+  `tangentAt` and `curvatureAt` on either side of the joint.
+- Offset the closed spline profile from the Surfaces section outward
+  by 3 mm and print the `geomType()` of every edge in the result.
+  `OFFSET` was to be expected – where do the `CIRCLE` edges come from?
+  (Look at how the profile closes.)
+:::

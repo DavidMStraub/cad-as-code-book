@@ -310,7 +310,7 @@ handed, so `tray_design_intent(make_cell(cell_21700))` already produces
 a tray that fits the new cell – one variant declaration flowing through
 the whole construction. The capstone below scales exactly this up.
 
-## Capstone and Try It: Scaling the Tray Up
+## Capstone: Scaling the Tray Up
 
 Everything so far is ready to be pushed further, by the reader rather
 than the page: three exercises, each one exactly the pattern just built,

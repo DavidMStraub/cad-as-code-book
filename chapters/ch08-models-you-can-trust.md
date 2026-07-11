@@ -550,7 +550,7 @@ call.
   slot filleted too small before rejecting one that looks fine in the
   viewer.
 - Extend the collision check above from one pair of pockets to every
-  neighboring pair in a hex-packed grid (Chapter 4's own Try It). At
+  neighboring pair in a hex-packed grid (Chapter 4's capstone). At
   what pitch does the first collision appear, and does it match `2 *
   pocket_r` the way the two-pocket case above did?
 - Add the same three checks this chapter ran on `cell_can` –
