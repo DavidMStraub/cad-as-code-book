@@ -1,15 +1,32 @@
 # Designing with Parameters
 
-% Status: sections 1-2 drafted in full; sections 3-6 are headings only.
-% See private/book-plan.md §2 (Ch. 4). Narrative rework: instead of five
-% independent topics each with its own standalone example, the chapter
-% follows one continuous build - a tray for Chapter 3's cell - where each
-% concept (feature order, design intent, patterns, parameter sets) is the
-% next real decision that comes up while building it, not a separate
-% demonstration bolted on. The three ambitious artifacts (hex-packed
-% cells, the 18650/21700/4680 variant generator, the data-driven
-% enclosure) stay reserved as reader-built exercises, scaling up the same
-% tray rather than repeating what the chapter already solved.
+% Status: full draft, all sections. See private/book-plan.md §2 (Ch. 4).
+% Narrative: instead of five independent topics each with its own
+% standalone example, the chapter follows one continuous build - a tray
+% for Chapter 3's cell - where each concept (feature order, design
+% intent, patterns, parameter sets) is the next real decision that comes
+% up while building it, not a separate demonstration bolted on. The three
+% ambitious artifacts (hex-packed cells, the 18650/21700/4680 variant
+% generator, the data-driven enclosure) stay reserved as reader-built
+% exercises, scaling up the same tray rather than repeating what the
+% chapter already solved.
+% 2026-07-11: intro paragraph added; §4 now closes the loop back to the tray
+% (tray_design_intent(make_cell(...)) - verified working). Empirical
+% claims re-verified in this environment: boss_then_fillet extra volume
+% exactly 0.0, fillet_then_boss exactly the boss's 150.8 mm^3;
+% BoundingBox().xlen exactly 18.0 / 21.0 (no tolerance slack) for the
+% revolved cells; mirror("YZ", basePointVector=...) signature current.
+
+A model whose dimensions are parameters is a model built to be
+rebuilt: every value might be different tomorrow, and the construction
+has to stay correct when it is. This chapter builds a tray for
+Chapter 3's cell and, along the way, meets the four disciplines that
+make rebuilding safe: putting features in an order whose dependencies
+survive change, deriving dimensions from the geometry they have to
+match instead of retyping them, multiplying one feature into a pattern
+instead of copying it, and bundling a variant's numbers into a single
+object that travels together. The chapter ends where the reader takes
+over: three exercises that scale the same tray to a real pack.
 
 ## Building the Tray: Feature Order in Practice
 
@@ -22,11 +39,10 @@ go in?
 
 A base shape is laid down first, almost always, and a part's finishing
 touches – fillets, chamfers – almost always go last, with material added
-and removed in between in whatever order the design calls for. This is
-the same argument Chapter 1 made about code in general, now showing up as
-a concrete habit: the script is a sequence of decisions, and most of the
-time their order can follow the shape of the part itself – envelope,
-then features, then finish. This is not a rule enforced by the library;
+and removed in between in whatever order the design calls for. Chapter 1
+called the program the recipe; a recipe's steps have an order, and most
+of the time that order can follow the shape of the part itself –
+envelope, then features, then finish. This is not a rule enforced by the library;
 it is a convention that survives because it usually matches how one
 feature's construction depends on another's – a mounting hole needs
 material to remove, a fillet needs an intact edge to round, ideally the
@@ -34,7 +50,7 @@ last edge that will exist rather than one a later cut is about to
 consume.
 
 There is a real exception, and it is worth seeing on a small, self-contained
-example before the tray's own features get involved: a small **locating
+example before the tray's features get involved: a small **locating
 boss** near one corner, a low round peg of the kind used to key a part's
 orientation on an assembly fixture.
 
@@ -129,7 +145,7 @@ the difference is immediate: `tray_hardcoded`'s pocket radius is still
 fit, it rests on top of the tray instead of into it. `tray_design_intent`
 reads `cell.BoundingBox().xlen / 2` fresh from the actual cell passed in,
 so its pocket radius becomes `10.8` automatically, still exactly 0.3
-millimeters of clearance, without the tray's own code changing at all.
+millimeters of clearance, without the tray's code changing at all.
 
 This is the sharper version of the same lesson Chapter 2 stated more
 mildly: a fixed number written into a construction is a claim about a
@@ -162,7 +178,7 @@ plate_with_holes = plate - mounting_holes
 ```
 
 `mirror` takes a plane to reflect across – `"YZ"` here, the plane through
-the tray's own center – and returns the reflected copy on its own; adding
+the tray's center – and returns the reflected copy on its own; adding
 it to the original gives both holes from one placement decision instead
 of two. Move the hole and its mirror image follows automatically, the
 same durability argument as Design Intent, applied to a second copy
@@ -268,7 +284,11 @@ reads whatever `CellSpec` it is given. Chapter 3 built exactly `cell_a`'s
 geometry with the numbers written directly into the profile; here they
 arrive as one object's fields instead, which is what makes a second,
 third, or eventual 4680-format cell a matter of stating a new
-`CellSpec`, not rewriting `make_cell`.
+`CellSpec`, not rewriting `make_cell`. And the pieces compose:
+`tray_design_intent` reads its pocket radius from whatever cell it is
+handed, so `tray_design_intent(make_cell(cell_21700))` already produces
+a tray that fits the new cell – one variant declaration flowing through
+the whole construction. The capstone below scales exactly this up.
 
 ## Capstone and Try It: Scaling the Tray Up
 
