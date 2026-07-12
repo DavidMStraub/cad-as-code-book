@@ -100,14 +100,49 @@
 % battery_module": the pack section's battery_pack() binds to whatever
 % battery_module currently is, and the no-arg version carries no
 % metadata.
+%
+% 2026-07-12: NEW SECTION "A Design Change: What the Pipeline Does Not
+% Check" - DRAFT, NOT YET VERIFIED (written in a no-code-execution session
+% per David; every claim below MUST be run before this chapter is
+% considered done). The section closes the book's biggest gap (model
+% surviving change - discussed with David, he commissioned the draft).
+% Claims requiring verification:
+% - tray()'s pockets are plain cylinders r=9.3, depth 3.0 (ch4 patterns
+%   code, no lead-in fillet in models.py's version) - so the seated-21700
+%   interference is analytic: pi*(10.5^2-9.3^2)*3.0 = 223.93 mm^3
+%   ("roughly 224" in prose). Confirm kernel agrees.
+% - Seated 18650 intersection: expect empty/zero (0.3 mm annular gap,
+%   pure surface contact at the pocket floor). Test asserts < 1e-6;
+%   confirm the kernel returns 0.0 (or an empty compound) and not an
+%   epsilon above the threshold.
+% - Confirm pytest output actually names the failing id (21700) the way
+%   the prose claims.
+% - tray(spec) fix: confirm 10.8 mm pockets at 24 mm spacing stay valid
+%   (2.4 mm web between pockets) and the release loop reruns with
+%   unchanged BOM lines.
+% - Signature change tray() -> tray(spec) happens mid-chapter: earlier
+%   sections (battery_module no-arg, cached_tray, constraints pair) call
+%   tray() no-arg and are narratively "before the fix"; sections after
+%   (fixture, diff) don't call tray() at all - checked by reading, confirm
+%   when running.
+% PLACEMENT BUG, decided by David 2026-07-12 ("resting on top is not
+% intended"), NOT YET FIXED: battery_module (both versions) and the ch09
+% figure script place cells at z=TRAY_THICKNESS (6.0) - on the plate's top
+% surface, hovering OVER the pockets (which span z 3..6). Cells must seat
+% at z = TRAY_THICKNESS - POCKET_DEPTH = 3.0. The constraints section's
+% celebrated z=6.0 (Plane to faces(">Z")) has the same issue - the plate
+% top is not the pocket floor; that section needs a pocket-floor face
+% selection and rewritten prose (solved z becomes 3.0). Figure needs
+% re-rendering. Full checklist: private/TODO-handoff.md item 1.
 
 This chapter takes finished parts and turns them into a product:
 assembled into a named, colored structure, exchanged through the
 formats other tools actually read, and released – bill of materials,
 supplier file, and print file from one loop over the named variants.
-It closes with two smaller tools of the same trade: a fixture derived
-from an imported STEP file, and a geometric diff that shows what a
-revision changed in the shape itself.
+Then it lets a design change slip past every one of those steps, to
+show what catches it. It closes with two smaller tools of the same
+trade: a fixture derived from an imported STEP file, and a geometric
+diff that shows what a revision changed in the shape itself.
 
 ## Assembling the Battery Module: Names, Colors, Locations
 
@@ -135,7 +170,9 @@ and they are what this chapter builds its first assembly out of. They
 enter the chapter the way models enter any real pipeline: as a small
 library, `models.py`, holding Chapter 4's code and nothing else. The
 construction lines inside it are printed in Chapter 4 and stay
-unchanged, so only the file's shape is worth a listing:
+unchanged – only the tray's thickness and pocket depth are lifted out
+as named constants, because the scripts below need both – so only the
+file's shape is worth a listing:
 
 ```python
 # models.py
@@ -145,6 +182,7 @@ from cadquery import Solid
 from cadquery import func as cf
 
 TRAY_THICKNESS = 6.0
+POCKET_DEPTH = 3.0
 
 
 def tray() -> Solid:
@@ -181,7 +219,7 @@ separate instead of combining their results into one shape:
 ```python
 import cadquery as cq
 
-from models import TRAY_THICKNESS, cell_18650, make_cell, tray
+from models import POCKET_DEPTH, TRAY_THICKNESS, cell_18650, make_cell, tray
 
 
 def battery_module() -> cq.Assembly:
@@ -190,7 +228,7 @@ def battery_module() -> cq.Assembly:
     cell = make_cell(cell_18650)
     for i in range(3):
         x = (i - 1) * 24.0
-        loc = cq.Location((x, 0, TRAY_THICKNESS))
+        loc = cq.Location((x, 0, TRAY_THICKNESS - POCKET_DEPTH))
         assy.add(cell, name=f"cell_{i}", color=cq.Color("steelblue"), loc=loc)
     return assy
 ```
@@ -200,9 +238,11 @@ rather than `cadquery.func` – a structuring layer above individual
 shapes, not another geometry operation – so this is the first chapter
 to import both. The pattern for placing the three cells is a plain loop
 over `Location`s, the same idiom `tray()` itself used for its three
-pockets; `cq.Assembly` adds a name, a color, and a place in a tree on
-top of geometry this book already knows how to build, not a new way of
-building it.
+pockets, and each cell's `z` is the pocket floor – tray thickness
+minus pocket depth – so every cell seats *in* its pocket rather than
+resting on the plate above it. `cq.Assembly` adds a name, a color, and
+a place in a tree on top of geometry this book already knows how to
+build, not a new way of building it.
 
 :::{figure} ../figures/generated/ch09-battery-module.png
 :width: 55%
@@ -250,31 +290,48 @@ tree rather than eight loose parts.
 
 ## Constraints: Solving for a Placement Instead of Computing It
 
-`battery_module` computes each cell's `z` by hand: `TRAY_THICKNESS`,
-read off and typed in. `Assembly` also supports stating the
-relationship instead and letting a solver work the number out:
+`battery_module` computes each cell's `z` by hand:
+`TRAY_THICKNESS - POCKET_DEPTH`, read off and typed in. `Assembly`
+also supports stating the relationship instead – *this face seats
+against that one* – and letting a solver work the number out. The
+face the cell seats against deserves a moment's care. The tray's
+*topmost* face, `faces(">Z")`, is the plate top around the pockets –
+a constraint against it would leave the cell resting over its pocket
+instead of in it, perfectly aligned and 3 mm too high. The seat is
+the pocket's floor, one group of parallel faces further down; the
+indexed selector `">Z[1]"` picks that second-highest group – all
+three pocket floors at once – and choosing the middle one is an
+ordinary `min` over their centers:
 
 ```python
-pair = cq.Assembly(name="pair")
-pair.add(tray(), name="tray")
-pair.add(make_cell(cell_18650), name="cell", loc=cq.Location((0, 0, 50)))  # placeholder z
+the_tray = tray()
+floors = the_tray.faces(">Z[1]").Faces()
+pocket_floor = min(floors, key=lambda f: abs(f.Center().x))  # the middle pocket
+cell = make_cell(cell_18650)
 
-pair.constrain("tray@faces@>Z", "cell@faces@<Z", "Plane")
+pair = cq.Assembly(name="pair")
+pair.add(the_tray, name="tray")
+pair.add(cell, name="cell", loc=cq.Location((0, 0, 50)))  # placeholder z
+
+pair.constrain("tray", pocket_floor, "cell", cell.faces("<Z"), "Plane")
 pair.solve()
 print(pair.children[1].loc.toTuple())
 ```
 
-`"tray@faces@>Z"` selects the tray's topmost face with the same string
-selectors Chapter 5 already taught; `"Plane"` asks the solver to bring
-the cell's bottom face into that plane, whatever `z` it takes to
-get there. The placeholder `50` above is gone after `solve()` – the
-printed location's `z` comes back `6.0`, `TRAY_THICKNESS` itself,
-without that number appearing anywhere in this snippet. A `Plane`
-constraint positions the whole face-to-face relationship, not only the
-gap along one axis, so it fits a single, deliberate pairing like this
-one cleanly; `battery_module`'s three cells stay a plain loop over
-`Location`s instead, the same reason `tray()` preferred a loop to a
-more elaborate pattern tool for its three pockets.
+This is `constrain`'s object form – the part's name plus the actual
+`Face` to constrain, in place of a selector string like
+`"cell@faces@<Z"`, which could name the cell's bottom face but has no
+way to say "the *middle* pocket floor". `"Plane"` asks the solver to
+bring the cell's bottom face into the pocket floor's plane, whatever
+placement it takes to get there. The placeholder `50` is gone after
+`solve()` – the printed location comes back centered on the middle
+pocket with `z = 3.0`, `TRAY_THICKNESS - POCKET_DEPTH` itself,
+without either number appearing anywhere in this snippet. A `Plane`
+constraint positions the whole face-to-face relationship, not only
+the gap along one axis, so it fits a single, deliberate pairing like
+this one cleanly; `battery_module`'s three cells stay a plain loop
+over `Location`s instead, the same reason `tray()` preferred a loop
+to a more elaborate pattern tool for its three pockets.
 
 ## STEP: Exchanging Geometry with Metadata
 
@@ -440,6 +497,81 @@ the *last* step of a release, behind the gate Chapter 8 built: the
 same CI job that runs the tests on every change runs them once more
 here, and a variant whose geometry fails its checks never reaches the
 `export` calls at all.
+
+## A Design Change: What the Pipeline Does Not Check
+
+The release loop above shipped the 21700 variant without complaint: a
+well-formed STEP file, a printable STL, a bill of materials that
+correctly counts three `cell_10.5`. It is worth pausing on how little
+scrutiny that took. The change that created the variant is one line –
+the `replace(...)` in the `variants` dict – and it is exactly the kind
+of line a reviewer approves in seconds, because nothing in it looks
+wrong, and nothing in it *is* wrong. The problem sits in a different
+file entirely: `tray()` builds its pockets from the numbers Chapter 4
+recorded, a radius of `9.3` mm – the 18650's radius plus clearance,
+true for as long as every cell in the design was an 18650. The design
+just moved, and that number, correct for five chapters, stayed put.
+The 21700 cell does not fit the tray it was released with.
+
+No tool in this chapter can notice that. `Assembly` places shapes
+exactly where it is told – interference is not its business. STEP
+records what it is given; the BOM counts names. `git diff` shows the
+one line that changed, and the pocket radius is not in it. Every step
+did its job, and the released product cannot be built.
+
+Chapter 8's answer applies unchanged, one level up: whether the cell
+fits is a property of the geometry, so ask the kernel. Seat a cell at
+the bottom of its pocket and intersect it with the tray – any volume
+the two shapes claim jointly is material the physical parts would have
+to fight over:
+
+```python
+# test_models.py
+from dataclasses import replace
+
+import pytest
+
+from models import TRAY_THICKNESS, cell_18650, make_cell, tray
+
+POCKET_DEPTH = 3.0
+cell_21700 = replace(cell_18650, r_cell=10.5, h_cell=70.0)
+
+
+@pytest.mark.parametrize("spec", [cell_18650, cell_21700], ids=["18650", "21700"])
+def test_cell_seats_in_pocket(spec):
+    seated = make_cell(spec).translate((0, 0, TRAY_THICKNESS - POCKET_DEPTH))
+    interference = seated * tray()
+    assert interference.Volume() < 1e-6
+```
+
+The `18650` case passes: the pocket was sized around this cell, and
+the `0.3` mm clearance keeps the intersection empty. The `21700` case
+fails, reporting roughly `224` mm³ of interference – an annular sleeve
+`1.2` mm thick and one pocket deep where cell and tray claim the same
+space – with the variant's name printed beside the failure, exactly
+what Chapter 8's parametrized sweep promised a failing case would
+carry.
+
+The fix is Chapter 4's design-intent lesson, applied at the scale
+where it earns its keep. The tray reads its pocket radius from the
+same `CellSpec` the cells are built from, instead of keeping a copy
+that has to match by coincidence:
+
+```python
+def tray(spec: CellSpec) -> Solid:
+    ...  # as before, with the pocket radius spec.r_cell + 0.3 read from the spec
+```
+
+`battery_module` and the test hand their spec through to `tray(spec)`,
+both parametrize cases pass, and the release loop reruns without
+another line changing – now shipping, for each variant, a tray its
+cells actually seat in. Run in CI behind Chapter 8's gate, the failing
+test is what stands between the one-line change and the export calls:
+the broken 21700 release never produces a file. That is the event
+this chapter's machinery exists for. A model living in a GUI meets a
+change like this as a person clicking through features, looking for
+whichever dimension was quietly a copy of another; a model that is
+code meets it as a named test failing in CI, before anything ships.
 
 ## A Fixture from an Imported STEP
 
