@@ -13,9 +13,9 @@ chapters.
 
 ## A First Solid
 
-A short script is enough to see how the pieces fit together. Setting up the
-two packages it needs is a one-time matter, covered in Appendix A; nothing
-more is assumed here.
+A short script is enough to see how the pieces fit together. It needs
+two packages, `cadquery` and `ocp_vscode`, both a one-time `pip
+install` away; nothing more is assumed here.
 
 ```python
 from cadquery import func as cf

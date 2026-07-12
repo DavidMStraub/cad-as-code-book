@@ -207,8 +207,7 @@ released in 2023, wraps the same bindings in an independent framework,
 derived in part from CadQuery but organized around different API choices.
 These two are today's main options for Python code-first CAD: a shared
 foundation, two different convictions about what the interface should feel
-like. This book works with CadQuery; Appendix B provides a phrasebook
-between the two.
+like. This book works with CadQuery.
 
 For quick orientation, the main steps in that line are these:
 
@@ -273,8 +272,6 @@ who use the scientific Python stack will recognize this division of labor.
 Two things the stack does not cover should be said plainly. Engineering
 drawings are outside the scope of this book, and integration with graphical
 CAD systems goes only as far as the standard exchange formats carry.
-Installation instructions age quickly and are kept where they can be
-updated: Chapter 2 contains enough to get started, Appendix A the details.
 
 ## The Plan of This Book, and How to Read It
 
