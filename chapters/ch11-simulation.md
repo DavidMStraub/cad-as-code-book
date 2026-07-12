@@ -79,6 +79,38 @@
 %   invalidates physical-group face references elsewhere in the compound
 %   after its fragment step runs - a meshing-context version of Ch. 5's own
 %   topological naming problem, not something to expect fixed.
+%
+% Review pass (July 2026): intro paragraph added; ~20 "X's own" tics swept
+% from reader prose; "this book's second half" -> "the book's final part"
+% (Ch. 8 opens Part III). Both worked examples rerun verbatim, top to
+% bottom: mean vM 3.155 vs 3.183, thermal 25.0-33.117 degC, hottest node
+% on-axis at z=46.5 (72% of height - caption now says "roughly 70%", was
+% "two-thirds"). Mesh counts drift run to run (4155 vs 4143 elements; vM
+% range 1.82-5.99 vs 1.74-6.21) but no quoted rounded number is affected.
+% Try It exercise 1 was UNSOLVABLE as written: halving lc moves the
+% whole-mesh mean vM AWAY from F/A (0.89% -> 1.41% error), because
+% refinement resolves the clamp/point-load concentrations more sharply and
+% they sit inside the mean. Restricting to mid-span elements (centroid z in
+% [10, 30]) converges cleanly: 0.430% -> 0.088%. Exercise reworded to
+% average mid-span (converges) and then whole-mesh (diverges, and says why
+% - it's the chapter's plausibility lesson, not a bug). Exercise 3
+% verified: doubled h_conv 33.12 -> 29.67 degC; insulated 88.59 degC.
+% Exercise 2 holds exactly by linearity of the solve.
+
+A parametric model that regenerates a part on demand can regenerate
+the questions about the part too: how far does it bend under this
+load, how hot does it run at that duty cycle? This chapter takes the
+volume mesh Chapter 10 built and puts numbers to questions of exactly
+that kind, using the finite element method. It works through two
+complete problems end to end – a steel rod under tension, validated
+against the pen-and-paper answer, and a battery cell heating itself
+from the inside – and both run through the same few steps: mesh the
+geometry, state the physics and the boundary conditions, solve one
+linear system. Two examples do not make anyone a simulation engineer.
+What they demonstrate is narrower and more useful: the path from a
+parametric model to a checkable physical result is code, short enough
+to read in one sitting and cheap enough to rerun the moment a
+dimension changes.
 
 ## The Finite Element Method
 
@@ -97,14 +129,14 @@ because the geometry is.
 The **finite element method (FEM)** is a general strategy for finding
 an approximate solution anyway, and it does not care which physics
 produced the differential equation in the first place. Break the
-domain into small, simple elements – Chapter 10's own mesh – and
+domain into small, simple elements – Chapter 10's mesh – and
 approximate the unknown quantity by a simple function, usually linear,
 within each one. Stitching those local approximations together across
 every node they share turns one differential equation with no general
 solution into one large system of ordinary linear algebraic equations,
 which does. Structural mechanics, heat conduction, electric and
 magnetic fields, fluid flow: mathematically, all of them are the same
-*kind* of problem – a field quantity, its own spatial variation, and
+*kind* of problem – a field quantity, its spatial variation, and
 something driving it – which is exactly why one method, and often one
 piece of software, solves all of them. What changes from one physics
 to the next is not the method; it is which quantity the unknowns
@@ -125,7 +157,7 @@ carries – a temperature at every node, say, or a displacement in each
 of three directions at every node – and $\mathbf{f}$ collects whatever
 is driving the problem, a load or a source. $K$ is assembled the same
 way regardless of the physics, one small contribution per element
-built from that element's own shape, size, and governing material
+built from that element's shape, size, and governing material
 property, but the name it carries depends on what it represents: in a
 structural problem, where it relates a force to a displacement, it is
 the **stiffness matrix** – the name this chapter uses for it in the
@@ -164,7 +196,7 @@ for.
 
 ## A Tension Rod: Setting Up an Elasticity Problem
 
-A cylindrical rod, pulled along its own axis, is the simplest three
+A cylindrical rod, pulled along its axis, is the simplest three
 dimensional structural problem with a known, closed-form answer to
 check a solver against – exactly why it is the worked example here
 rather than something more elaborate.
@@ -251,7 +283,7 @@ A rod under a known axial force has a closed-form answer:
 
 $$\Delta l = \frac{F l}{E A}, \qquad \sigma = \frac{F}{A}$$
 
-where $A = \pi r^2$ is the cross-section. Comparing the solver's own
+where $A = \pi r^2$ is the cross-section. Comparing the solver's
 displacement field against $\Delta l$ directly is not quite fair to
 either number – $\Delta l$ assumes a uniform bar far from any load
 application, while the solver's nodes right at the loaded face carry a
@@ -289,9 +321,10 @@ sigma = linear_stress(lam, mu)(eps)
 
 s11, s22, s33 = sigma[0, 0], sigma[1, 1], sigma[2, 2]
 s12, s23, s31 = sigma[0, 1], sigma[1, 2], sigma[2, 0]
-von_mises = np.sqrt(
-    0.5 * ((s11 - s22) ** 2 + (s22 - s33) ** 2 + (s33 - s11) ** 2 + 6 * (s12**2 + s23**2 + s31**2))
-)
+
+normal = (s11 - s22) ** 2 + (s22 - s33) ** 2 + (s33 - s11) ** 2
+shear = s12**2 + s23**2 + s31**2
+von_mises = np.sqrt(0.5 * (normal + 6 * shear))
 ```
 
 Plotting both fields against axial position, next to the two analytic
@@ -300,7 +333,7 @@ formulas above:
 :::{figure} ../figures/generated/ch11-tension-rod-validation.png
 :width: 95%
 
-FEM against the closed-form solution, along the rod's own axis. Left:
+FEM against the closed-form solution, along the rod's axis. Left:
 nodal $u_z$ against the analytic straight line. Right: per-element von
 Mises stress against the analytic $F/A$. Both agree closely over most
 of the rod's length; both spread out near the fixed and loaded ends,
@@ -315,7 +348,7 @@ against the analytic `3.183` – under one percent.
 :::{figure} ../figures/generated/ch11-tension-rod.png
 :width: 40%
 
-The tension rod's own von Mises stress field. The ring of concentrated
+The tension rod's von Mises stress field. The ring of concentrated
 stress at the loaded top face is the same effect the plot above
 captures numerically – real, and expected, not a solver artifact.
 :::
@@ -335,7 +368,7 @@ $$-k \nabla^2 T = q,$$
 
 where $T$ is temperature, $k$ the material's thermal conductivity, and
 $q$ the volumetric heat generation rate per unit volume. $\nabla^2 T$
-is the divergence of temperature's own gradient – how sharply the
+is the divergence of the temperature gradient – how sharply the
 gradient itself is changing from point to point – and multiplying it
 by $-k$ turns that into the net rate heat flows into a point, which
 the equation sets equal to whatever is generated there. Assembling
@@ -351,10 +384,10 @@ is being generated, which is why the same operator building $K$ here
 would be the entire equation on its own in a model with no heat
 source.
 
-Three cells, each resting on its own share of a cooling plate that
-holds its own base at a fixed temperature, are the domain – no tray, no
-shared structure between them, each cell warmed by its own interior
-and cooled by its own base and surface:
+Three cells, each resting on a cooling plate that holds its base at a
+fixed temperature, are the domain – no tray, no shared structure
+between them, each cell warmed from the inside and cooled through its
+base and outer surface:
 
 ```python
 from cadquery import Solid
@@ -380,9 +413,9 @@ cadmesh = cadgmsh.mesh(cells, dim=3, lc=3, physical={"bottom": bottoms, "sides":
 mesh = from_meshio(cadmesh)
 ```
 
-The same narrow terminal knob Chapter 3's own 18650 cell used, unioned
+The same narrow terminal knob Chapter 3's 18650 cell used, unioned
 onto the body – `sides` picks up every face the union creates, the
-terminal's own lateral and top faces included, with no change to how
+terminal's lateral and top faces included, with no change to how
 it is collected: everything but the bottom.
 
 `cadgmsh.mesh` accepts a list of shapes as readily as one – three
@@ -390,8 +423,8 @@ separate cells, meshed together in a single call, each keeping its own
 identity in the physical groups the mesh comes back with.
 
 A **volumetric heat source** – energy generated throughout the cell's
-own material, the real origin of a battery's own heat under load –
-needs a different kind of term than a boundary condition supplies:
+material, which is how a battery under load actually heats – needs a
+different kind of term than a boundary condition supplies:
 
 ```python
 from skfem.models.poisson import laplace, unit_load
@@ -409,13 +442,13 @@ than over one boundary; scaled by `q`, it is exactly the right-hand
 side a uniform volumetric source produces – the same role `f` played
 for the tension rod's point load, built here from different physics.
 
-The cooling plate fixes each cell's own base at a known temperature;
-the exposed sides and top lose heat to the surrounding air by
-**convection** instead, a boundary condition of its own shape:
+The cooling plate fixes each cell's base at a known temperature; the
+exposed sides and top lose heat to the surrounding air by
+**convection** instead, a boundary condition of a different shape:
 
 $$-k \, (\nabla T \cdot \mathbf{n}) = h_{\mathrm{conv}} (T - T_{\mathrm{amb}}),$$
 
-where $\mathbf{n}$ is the surface's own outward normal, so $\nabla T
+where $\mathbf{n}$ is the outward surface normal, so $\nabla T
 \cdot \mathbf{n}$ is how fast temperature rises moving out through it.
 The equation reads as a balance at the surface – heat conducted up to it from
 inside the cell, the left side, equals heat carried away by the air,
@@ -463,7 +496,7 @@ underneath is the same either way.
 
 A convective boundary contributes to both sides of $K \mathbf{u} =
 \mathbf{f}$ at once: `convective` adds to $K$ because the heat a
-surface loses depends on its own unknown temperature; `ambient` adds
+surface loses depends on its unknown temperature; `ambient` adds
 to $f$ because that loss is driven by a known quantity, the air
 temperature – the same split between "depends on the unknown" and
 "already known" this chapter has used throughout, applied now to a
@@ -483,8 +516,8 @@ T_solved = solve(*condense(K, f, x=T, D=cold_dofs))
 
 The solved temperature field across all three cells, identical on each
 since nothing in this model couples one cell to another. Cut open to
-show the interior, where the hottest point sits, on each cell's own
-central axis roughly two-thirds of the way up – warmed from every side
+show the interior, where the hottest point sits, on each cell's
+central axis roughly 70% of the way up – warmed from every side
 at once and furthest from the fixed-temperature base.
 :::
 
@@ -493,8 +526,8 @@ cooling plate itself, exactly the fixed temperature it was given, up to
 `33.1` degrees at that interior point – a modest rise consistent with a
 small cell generating a fraction of a watt into air that is free to
 carry most of it away. Nothing in this
-model connects one cell's own mesh to its neighbors – each solves as
-its own independent thermal problem, sharing nothing but the same
+model connects one cell's mesh to its neighbors – each cell solves as
+an independent thermal problem, sharing nothing but the same
 cooling-plate temperature and the same surrounding air, an honest fit
 for cells spaced apart with nothing but air between them, not a
 statement that no real pack ever needs more.
@@ -508,18 +541,18 @@ material property, a boundary condition, a solve. That repeatability is
 the actual payoff of building simulation this way rather than by hand
 or inside a separate GUI tool. The geometry a parametric model already
 builds becomes the mesh a solver consumes directly; the same script
-that generates a part regenerates its own simulation the moment a
+that generates a part regenerates its simulation the moment a
 dimension changes, with no export step, no manual re-meshing, no
 reapplying boundary conditions to faces that moved since the last run.
-A model that carries its own check, the argument Chapter 8 opened this
-book's second half with, now extends all the way to a structural or
+A model that carries its own check, the argument Chapter 8 opened the
+book's final part with, now extends all the way to a structural or
 thermal one.
 
 Structural and thermal analysis is a discipline in its own right well
-beyond this chapter's own two examples – contact between parts,
-plasticity and fatigue, vibration and impact, multiphysics coupling,
-mesh convergence studied properly rather than checked once by hand.
-This chapter's own contribution is narrower: showing that the pipeline
+beyond these two examples – contact between parts, plasticity and
+fatigue, vibration and impact, multiphysics coupling, mesh convergence
+studied properly rather than checked once by hand.
+This chapter's contribution is narrower: showing that the pipeline
 connecting a parametric model to a real, checkable physics result is
 code, the same as everything else in this book – which is exactly what
 lets
@@ -528,13 +561,19 @@ result, rather than checking candidates one at a time by hand.
 
 :::{note} Try It
 - Rerun the tension rod at half the element size (`lc=1.25` instead of
-  `2.5`) and confirm the mean von Mises stress moves closer to the
-  analytic value, not further from it – the same convergence argument
-  Chapter 10 raised for mesh quality in general, now checked against a
-  number this chapter can actually verify by hand.
+  `2.5`) and average the von Mises stress over the middle of the rod
+  only – elements whose centroid sits between $z = 10$ and $z = 30$ –
+  and confirm it moves closer to the analytic value, the same
+  convergence argument Chapter 10 raised for mesh quality in general.
+  Then average over the whole mesh instead, and notice it moves the
+  other way: the finer mesh resolves the concentrations at the clamp
+  and the loaded nodes more sharply, and those are real features of
+  these boundary conditions, not of the uniform bar the formula
+  describes. Converging toward the formula everywhere would require
+  boundary conditions the formula actually assumes.
 - Halve `F` on the tension rod and confirm both the displacement and
-  the von Mises stress halve with it – linear elasticity's own
-  definition, checkable directly rather than assumed.
+  the von Mises stress halve with it – the definition of linearity,
+  checked directly rather than assumed.
 - Double `h_conv` on the cell model, standing in for a fan replacing
   still air, and confirm the hottest point drops. Then remove the
   convective boundary entirely and solve with the sides left bare – an
