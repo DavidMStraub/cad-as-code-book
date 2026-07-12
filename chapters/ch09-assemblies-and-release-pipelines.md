@@ -169,6 +169,38 @@
 %   at all, so nothing downstream contradicts the signature change.
 % Full checklist retired: private/TODO-handoff.md items 1 and 2 both
 % closed.
+%
+% Try It box - all three exercises verified 2026-07-12 (Sonnet), each hit
+% a real problem, all three fixed by rewording (not by weakening the
+% exercise - each fix points at a technique confirmed to work):
+% - Ex1 (4680 BOM): true as it stood, but a trap - the BOM/isValid() both
+%   stay green while the resulting tray is physically broken (three
+%   46.6mm pockets 24mm apart overlap by 22.6mm; the outer pockets eat
+%   61% of the material around the mounting holes before the mounting
+%   hole cut even runs). Reworded to send the reader to the same
+%   interference-style check "A Design Change" just taught, turning the
+%   trap into the point of the exercise instead of a silent gap.
+% - Ex2 (Axis constraint): the natural approach (rotate the cell shape,
+%   then re-select faces("<Z")) crashes - confirmed twice -
+%   ValueError: Unsupported entity <Compound> for constraint Axis,
+%   because after a 90 degree tip all 5 faces of the cell tie for lowest
+%   z. Only "top face" -> "pocket floor" fixed here (a real correctness
+%   fix, matching the chapter's own placement-bug fix); the Location-vs-
+%   rotate technique was deliberately NOT hinted at, per David - hitting
+%   the crash and working out why is the exercise. Confirmed the working
+%   route exists: expressing the tip via the assembly Location instead of
+%   rotating the shape solves cleanly, Plane alone already returns a
+%   90-degree-tipped start to upright, and adding Axis changes nothing
+%   (redundant for an axisymmetric bottom face) - so the exercise remains
+%   solvable, just not spoiled.
+% - Ex3 (cell_can diff): the obvious reading, rim_fillet=0.0 on the
+%   chapter's on-page cell_can, crashes the kernel outright
+%   (OCP.StdFail.StdFail_NotDone - zero-radius fillet is invalid; the
+%   function has no rim_fillet<=0 guard). Fixed by pointing at Chapter
+%   8's two ACTUAL on-page revisions of cell_can (pre-fillet and final)
+%   instead of parameterizing a fillet call to zero - confirmed: diff
+%   comes back one solid, 9.6101 mm^3, matching the direct Volume()
+%   difference exactly.
 
 This chapter takes finished parts and turns them into a product:
 assembled into a named, colored structure, exchanged through the
@@ -710,14 +742,15 @@ The geometric diff between two plate revisions: the two crescents where
 - Extend the release pipeline to Chapter 4's third named format, the
   4680 cell from that chapter's exercises, and confirm the printed BOM
   picks it up as a new part without any other line in the loop
-  changing.
+  changing. Then check the pockets the way "A Design Change" checked
+  the 21700's: do they still fit?
 - Add a fourth constraint to the single-pair example: keep the cell's
-  `Plane` constraint to the tray's top face, and add an `Axis`
+  `Plane` constraint to the tray's pocket floor, and add an `Axis`
   constraint aligning the cell's axis to the tray's normal. Does
   `solve()` still place the cell the same way, and what changes if the
   cell starts out tipped over on its side?
-- Run `geometric_diff` between two revisions of Chapter 8's `cell_can`
-  – one with a rim fillet, one without. Is the diff one solid or
-  several, and does its volume match the difference in `Volume()`
+- Run `geometric_diff` between Chapter 8's two on-page revisions of
+  `cell_can`, before the rim fillet and after. Is the diff one solid
+  or several, and does its volume match the difference in `Volume()`
   between the two directly?
 :::
