@@ -53,6 +53,23 @@
 % - Figures: ch12_convergence.py rewritten for the buoy (mass vs
 %   iteration); new ch12_buoy.py renders the optimized hull split at its
 %   computed waterline. ch12-holder-stress.png unchanged.
+%
+% Review pass (July 2026, prose only - code NOT rerun, per David, credits):
+% grammar fix in the quadratic-penalty paragraph ("that is far worse" ->
+% "that failure is far worse"); pressure_load comparison sharpened to name
+% the `ambient` LinearForm specifically (Ch. 11's convective *boundary* is
+% one BilinearForm plus one LinearForm; only ambient is the like-for-like);
+% von Mises listing reformatted with normal/shear intermediates to match
+% Ch. 11's listing exactly (the old one-line form was 99 chars, over
+% Black-92, and wrapped into an orphan fragment in the ch11 render -
+% mathematically identical, so safe without a rerun); "its own starting
+% point" -> "its starting point" in the Nelder-Mead table. Cross-refs
+% checked against current chapter text: ch9 24 mm module spacing, ch8
+% "checking the result", ch11 tension-rod mid-span comparison (still
+% accurate after ch11's exercise rewrite - now even taught twice). Section
+% order judged sound; known forward reference: the quadratic-penalty
+% numbers cite "the search" before any algorithm is introduced -
+% deliberate, flagged to David, left as is.
 
 Every part this book has built so far was described by numbers the
 reader chose: a wall thickness typed into a function call, a fillet
@@ -226,7 +243,7 @@ constraint boundary the penalty pushes back with no force at all,
 and the optimizer, feeling nothing stopping it there, settles just
 inside the infeasible side rather than exactly on the feasible one.
 Run on the buoy with a penalty weight that looks entirely reasonable
-on paper, that is far worse than a rounding error: the search
+on paper, that failure is far worse than a rounding error: the search
 converges to a design whose center of mass sits `5.2` mm *above* its
 center of buoyancy – an "optimized" buoy that capsizes – with
 `52.1` mm of freeboard against the required `60`. Making the same
@@ -300,7 +317,7 @@ the bounds, that risk takes a concrete form:
 | Start $(\text{body}, t_\text{ballast})$ | Converges to |
 |---|---|
 | $(500, 20)$, $(650, 5)$, $(750, 30)$ | the optimum, $8.42$ kg |
-| $(200, 10)$, $(250, 120)$, $(300, 50)$, $(400, 100)$, $(450, 60)$, $(700, 140)$ | its own starting point, `success=False` |
+| $(200, 10)$, $(250, 120)$, $(300, 50)$, $(400, 100)$, $(450, 60)$, $(700, 140)$ | its starting point, `success=False` |
 | $(600, 80)$ | the optimum, after a lucky escape |
 
 The three starts that describe a floating buoy converge to the same
@@ -476,15 +493,15 @@ def max_stress(wall: float, lc: float = 1.5) -> tuple[float, float]:
     sigma = linear_stress(lam, mu)(eps)
     s11, s22, s33 = sigma[0, 0], sigma[1, 1], sigma[2, 2]
     s12, s23, s31 = sigma[0, 1], sigma[1, 2], sigma[2, 0]
-    von_mises = np.sqrt(
-        0.5 * ((s11 - s22) ** 2 + (s22 - s33) ** 2 + (s33 - s11) ** 2 + 6 * (s12**2 + s23**2 + s31**2))
-    )
+    normal = (s11 - s22) ** 2 + (s22 - s33) ** 2 + (s33 - s11) ** 2
+    shear = s12**2 + s23**2 + s31**2
+    von_mises = np.sqrt(0.5 * (normal + 6 * shear))
     return holder.Volume(), von_mises.max()
 ```
 
-`pressure_load` is a `LinearForm` exactly like Chapter 11's
-convective boundary, only built from the facet normal `w.n` instead
-of a fixed direction – `-PRESSURE * w.n` pushes outward through the
+`pressure_load` is a `LinearForm` exactly like the `ambient` term of
+Chapter 11's convective boundary, only built from the facet normal
+`w.n` instead of a fixed direction – `-PRESSURE * w.n` pushes outward through the
 wall at every point on the pocket, whichever way that wall happens to
 curve. `bottoms` stays fixed, standing in for whatever the holder
 rests against; nothing else is constrained.
