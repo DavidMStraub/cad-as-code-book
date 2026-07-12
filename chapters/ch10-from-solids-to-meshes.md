@@ -56,6 +56,26 @@
 %   all still valid solids - a real, tunable parameter, not cosmetic.
 %   Resulting side-wall thickness at grip_clearance=0 is 1.5mm, matching
 %   published community-measured figures for this class of part.
+% 2026-07-11 pass: intro paragraph added; the banned defensive qualifier
+% "not to the export step itself" (the EXACT phrase recorded as rejected
+% in the working-rules memory) was still in §STL - deleted, positive
+% statement stands alone; "Chapter 4's own habit for booleans" was a
+% PHANTOM reference (grep: overshoot is taught nowhere in Chs. 2-9), so
+% the overshoot habit is now named and justified here, where it first
+% appears deliberately (no zero-thickness slivers, no exactly-coincident
+% faces for the kernel to adjudicate); Maker Payoff opening rewritten
+% positive-first (was the banned "Chapter 2 built X but it lacks Y"
+% shape); "X's own" tics swept; pv.from_meshio verified present and
+% working this session (wraps the cadgmsh volume mesh, 1720 cells at
+% lc=5 on the plate).
+
+This chapter is about the step where exact geometry becomes something
+other tools can consume: tessellation into triangles for a printer's
+slicer, and finite-element meshing into tetrahedra for the solver
+Chapter 11 puts to work. Both are controlled approximations, and both
+end in a physical payoff – the chapter closes by completing Chapter
+2's clutch brick into a part worth printing and clicking onto a real
+brick.
 
 ## Why Discretize
 
@@ -121,9 +141,9 @@ and outside and no gaps. A single, valid `Solid` tessellates into a
 watertight mesh by construction, so the failure modes STL is known for
 in practice – gaps, flipped normals, edges shared by more than two
 triangles – trace back to a solid that was already broken before
-tessellation, not to the export step itself. "Broken" here means
+tessellation. "Broken" here means
 specifically what `isValid()` checks: topological consistency, not
-whether the shape looks like the one intended. Chapter 7's own pinched
+whether the shape looks like the one intended. Chapter 7's pinched
 sweep is the sharp counterexample – `isValid()` reports `True`,
 `exportStl` succeeds without complaint, and the resulting STL is a
 technically watertight mesh of a tube that still folds back through
@@ -135,7 +155,7 @@ self-intersecting but "valid" mesh like that one is on its own.
 ## Meshing for Simulation
 
 A **finite-element mesh** fills a volume: tetrahedra packed through a
-part's own interior, not just triangles describing its skin, each
+part's interior, not just triangles describing its skin, each
 element coupled to its neighbors at a shared face or edge so a solver
 can compute a quantity like stress or temperature across the whole
 part rather than only its surface. Element size and element shape both
@@ -158,7 +178,7 @@ slicer never needed to see.
 :::
 
 Both meshes in that figure come from the same part. The left one is
-the kernel's own tessellation, the same one `exportStl` writes. The
+the kernel's tessellation, the same one `exportStl` writes. The
 right one comes from a different tool entirely, built for exactly the
 uniform, interior-filling job STL was never meant for.
 
@@ -178,8 +198,10 @@ part = plate - hole
 ```
 
 The hole cylinder is taller than the plate is thick, and shifted so it
-overshoots both faces rather than landing exactly flush with either,
-Chapter 4's own habit for booleans in general.
+overshoots both faces rather than landing exactly flush with either – a
+habit worth adopting for cutting booleans in general: a cut that
+overshoots cannot leave a zero-thickness sliver behind, and never asks
+the kernel to decide the fate of two faces that coincide exactly.
 
 ```python
 import cadgmsh
@@ -191,7 +213,7 @@ volume_mesh = cadgmsh.mesh(part, dim=3, lc=5)
 pv.from_meshio(volume_mesh).plot(show_edges=True)
 ```
 
-`dim=2` meshes only the part's own faces – a flat mesh over each
+`dim=2` meshes only the part's faces – a flat mesh over each
 surface, no interior, the natural choice for a thin plate or a shell.
 `dim=3` fills the interior with tetrahedra as well, needed whenever the
 solver's own equations act on a volume rather than a surface.
@@ -205,12 +227,11 @@ came from exactly this call, `plot(show_edges=True)` on each side.
 
 ## Maker Payoff: Printing the Clutch Brick
 
-Chapter 2's `clutch_brick` is solid: a box with two studs added on top,
-nothing removed. It can be clicked on top of by another brick, but it
-has nothing to receive one from below – no cavity, no wall for a stud
-to press against. A real clutch brick is hollow underneath for exactly
-that reason, and completing it is what turns this from a shape into a
-part a reader can actually print and click onto a real, physical brick:
+A real clutch brick is hollow underneath: the cavity is where the
+brick below reaches in, and the cavity's inner walls are what grip
+that brick's studs. This section adds the underside to Chapter 2's
+`clutch_brick` – body and studs, taken over unchanged – and turns it
+into a part a reader can print and click onto a real, physical brick:
 
 ```python
 from cadquery import Solid
@@ -257,8 +278,8 @@ between the two studs, adds the kind of reinforcement rib a real hollow
 molded part carries against warping and sink marks, clear of the grip
 channel on every side and clear of any real stud, which lands at
 `stud_spacing / 2` off-center, not on the axis the post itself occupies.
-Its own height overshoots into the roof by the same margin the cavity
-itself already overshoots by – without that overshoot, the post is a
+The post's height overshoots into the roof by the same margin the cavity
+already overshoots by – without that overshoot, the post is a
 separate, disconnected solid floating inside the cavity rather than
 part of the same part, exactly the `assert isinstance(result, Solid)`
 two lines above exists to catch. `grip_clearance` states, directly, how
@@ -282,7 +303,7 @@ reinforcement post are all invisible from the outside otherwise.
 That number is also precisely what a 3D printer will not reproduce
 exactly. FDM printers routinely print internal cavities a little
 undersized and external features a little oversized relative to the
-model that asked for them, an artifact of the nozzle's own width and
+model that asked for them, an artifact of the nozzle's width and
 the way each layer's outline is traced – printer-specific, and not
 something this book can state a universal correction for. `grip_clearance`
 is exactly the parameter to iterate against a real, physical result:
@@ -306,13 +327,13 @@ printed part either gripping a real brick's stud or not.
 - Print `clutch_brick` at a couple of different `grip_clearance` values
   – `0.0`, `0.15`, `0.3` – and click each onto a real, commercially
   available clutch brick. Record which ones grip, which fall off, and
-  which are too tight to press together at all; that range is your own
+  which are too tight to press together at all; that range is your
   printer's real tolerance, not a number this book could have told you
   in advance.
 - Mesh `clutch_brick` with `cadgmsh.mesh(brick, dim=3, lc=1)`, and view
   it in PyVista with `show_edges=True`. Where does the mesh get visibly
   denser without being asked to – and does that match where the part's
-  own geometry is most detailed?
+  geometry is most detailed?
 - Export the same `cell_can` from this chapter at three tolerances –
   loose, moderate, tight – with `relative=False`, and compare both the
   file sizes and how the curved wall actually looks up close in the
