@@ -126,14 +126,49 @@
 %   (fixture, diff) don't call tray() at all - checked by reading, confirm
 %   when running.
 % PLACEMENT BUG, decided by David 2026-07-12 ("resting on top is not
-% intended"), NOT YET FIXED: battery_module (both versions) and the ch09
-% figure script place cells at z=TRAY_THICKNESS (6.0) - on the plate's top
-% surface, hovering OVER the pockets (which span z 3..6). Cells must seat
-% at z = TRAY_THICKNESS - POCKET_DEPTH = 3.0. The constraints section's
-% celebrated z=6.0 (Plane to faces(">Z")) has the same issue - the plate
-% top is not the pocket floor; that section needs a pocket-floor face
-% selection and rewritten prose (solved z becomes 3.0). Figure needs
-% re-rendering. Full checklist: private/TODO-handoff.md item 1.
+% intended") - FIXED 2026-07-12 (Sonnet, continuing Fable's session).
+% battery_module (both the no-arg and CellSpec-taking versions) and the
+% ch09 figure script now seat cells at z = TRAY_THICKNESS - POCKET_DEPTH
+% = 3.0, not 6.0. models.py gained a POCKET_DEPTH = 3.0 constant
+% (imported alongside TRAY_THICKNESS) so every script reads it rather
+% than retyping 3.0. The constraints section was rewritten: faces(">Z")
+% is the plate top, not the pocket floor, so it now selects the second
+% face group down (">Z[1]"), picks the middle pocket's floor with a
+% plain min() over face centers, and constrains via constrain()'s
+% object form (name + Face, not a selector string, since no string
+% selector can say "the middle one"). Solved z now comes back 3.0 as
+% claimed. figures/ch09_battery_module.py line 39 fixed the same way
+% and re-rendered - the new render visibly shows cells seated with a
+% ring at the pocket rim, reads better than the old floating version.
+% Verified end to end: full ch9_verify.py rerun reproduces every quoted
+% number unchanged (tray 15445.6, cells 16305.7 x3, pack children/
+% traverse 8, constraints solve (~0,~0,3.0), STEP roundtrip, fixture
+% valid, diff True 2 141.3) - the placement fix does not touch any
+% volume, exactly as expected. PDF pages re-rendered and checked: both
+% the constraints section and the new Design Change section fit their
+% code blocks cleanly with no orphaned fragments.
+%
+% "A Design Change" section - VERIFIED 2026-07-12 (was drafted without
+% execution; every claim in the prior note now confirmed against the
+% installed packages):
+% - tray()'s pockets ARE plain r=9.3 cylinders, no lead-in fillet.
+% - test_cell_seats_in_pocket run verbatim via pytest: 18650 passes
+%   (interference 0.0, kernel returns exactly zero, not an epsilon);
+%   21700 fails with interference 223.93272... mm^3, matching the
+%   analytic pi*(10.5^2-9.3^2)*3.0 = 223.93 to 5 digits ("roughly 224"
+%   in prose is accurate). Pytest's failure line names
+%   "test_cell_seats_in_pocket[21700]" exactly as the prose claims.
+% - tray(spec) fix implemented and run: both variants isValid True,
+%   21700 leaves a 2.4 mm web between pockets (24 - 2*(10.5+0.3)),
+%   zero interference for both, release loop reruns and prints
+%   {'tray': 1, 'cell_9.0': 3} / {'tray': 1, 'cell_10.5': 3} unchanged.
+% - Confirmed by reading the rendered PDF: the mid-chapter tray() ->
+%   tray(spec) signature change reads correctly - every section before
+%   "A Design Change" calls the no-arg tray() and is narratively
+%   pre-fix; fixture_for and geometric_diff after it don't call tray()
+%   at all, so nothing downstream contradicts the signature change.
+% Full checklist retired: private/TODO-handoff.md items 1 and 2 both
+% closed.
 
 This chapter takes finished parts and turns them into a product:
 assembled into a named, colored structure, exchanged through the
@@ -443,7 +478,7 @@ def battery_module(spec: CellSpec) -> cq.Assembly:
     cell = make_cell(spec)
     for i in range(3):
         x = (i - 1) * 24.0
-        loc = cq.Location((x, 0, TRAY_THICKNESS))
+        loc = cq.Location((x, 0, TRAY_THICKNESS - POCKET_DEPTH))
         assy.add(cell, name=f"cell_{i}", metadata={"part": f"cell_{spec.r_cell}"}, loc=loc)
     return assy
 ```

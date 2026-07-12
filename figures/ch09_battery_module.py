@@ -1,9 +1,11 @@
 """Figure: the battery module from Chapter 9 ("Assembling the Battery
-Module") - Chapter 4's own tray plus three of Chapter 3/4's own
-make_cell cylinders, placed by a plain loop over Locations and named as
-a cq.Assembly. The figure itself renders the plain shapes (pyvista_cad
+Module") - Chapter 4's tray plus three of Chapter 3/4's make_cell
+cylinders, placed by a plain loop over Locations and named as a
+cq.Assembly. The figure itself renders the plain shapes (pyvista_cad
 draws Shapes, not Assembly trees), colored the same way the assembly's
-own cq.Color calls do, to match the book's own screenshot conventions.
+cq.Color calls do, to match the book's screenshot conventions. Cells
+seat in their pockets (z = thickness - pocket_depth), matching the
+chapter's placement fix.
 """
 
 from cadquery import func as cf
@@ -36,7 +38,7 @@ def make_cell(r_cell, h_cell, r_terminal=2.5, h_terminal=1.0):
 
 
 cell = make_cell(9.0, 65.0)
-cells = [cell.translate(((i - 1) * 24.0, 0, thickness)) for i in range(3)]
+cells = [cell.translate(((i - 1) * 24.0, 0, thickness - pocket_depth)) for i in range(3)]
 
 shapes = [tray] + cells
 colors = ["#b0b0b0"] + ["#4a86c5"] * 3

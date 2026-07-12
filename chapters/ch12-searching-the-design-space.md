@@ -70,6 +70,15 @@
 % order judged sound; known forward reference: the quadratic-penalty
 % numbers cite "the search" before any algorithm is introduced -
 % deliberate, flagged to David, left as is.
+%
+% 2026-07-12 (Sonnet, continuing Fable's session): holder_objective's
+% except-clause sentinel 1e8 -> float("inf"), decided by David to match
+% the buoy's convention (chapter argues specifically for inf). One clause
+% added tying the two objectives together. Reran the full DE search
+% (differential_evolution, seed=42, maxiter=40, popsize=10, tol=1e-4,
+% polish=False, ~220s) with the new sentinel: wall=0.656, volume=2260.3,
+% sigma_max=15.015 - EXACTLY unchanged from the 1e8 version. No prose
+% numbers needed updating.
 
 Every part this book has built so far was described by numbers the
 reader chose: a wall thickness typed into a function call, a fillet
@@ -509,7 +518,8 @@ rests against; nothing else is constrained.
 The objective wraps `max_stress` the same way the buoy's objective
 wrapped `evaluate` – minimize material, penalize the one constraint
 that matters, a maximum stress the plastic can actually survive with
-a safety margin built in:
+a safety margin built in, and fall back on the same `inf` for
+anything the mesher or solver cannot handle:
 
 ```python
 SIGMA_MAX = 15.0  # MPa, an allowable stress with margin below the material's yield
@@ -522,7 +532,7 @@ def holder_objective(x: np.ndarray) -> float:
         penalty = max(0.0, sigma_max - SIGMA_MAX) * 50.0
         return volume + penalty
     except Exception:
-        return 1e8
+        return float("inf")
 
 
 result = differential_evolution(
