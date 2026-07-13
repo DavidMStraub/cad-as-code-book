@@ -12,6 +12,8 @@ files:
   - cc-by.svg
   - table-style.typ
   - cover.png
+  - cover-logo.svg
+  - title-page-logo.svg
 
 doc:
   - id: title
@@ -41,6 +43,24 @@ options:
     type: string
     default: "#2f4e6e"
     description: Cover page background colour (fills the whole page)
+  - id: cover_logo
+    type: string
+    default: "cover-logo.svg"
+    description: >
+      Filename of the publisher logo (must be listed under `files` in
+      template.yml so jtex copies it alongside template.typ), shown in a
+      footer band below the cover image on the cover page. Use a
+      light/white variant since it sits on the dark cover background.
+      Leave empty ("") to omit it.
+  - id: title_page_logo
+    type: string
+    default: "title-page-logo.svg"
+    description: >
+      Filename of the publisher logo (must be listed under `files` in
+      template.yml so jtex copies it alongside template.typ), shown at
+      the bottom of the title page. Use a dark/black variant since it
+      sits on the white title page background. Leave empty ("") to
+      omit it.
   - id: cover_text_color
     type: string
     default: "#ffffff"

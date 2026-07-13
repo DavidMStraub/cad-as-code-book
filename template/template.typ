@@ -18,6 +18,12 @@
 #let mono-font = ("Fira Code", "IBM Plex Mono")
 #let sans-font = ("IBM Plex Sans")
 
+// The HM wordmark SVG has ~4.5% empty margin left of the ink within its own
+// canvas, so aligning the image's bounding box to a left edge visually
+// leaves the mark sitting a few mm right of it. This is the ink inset at a
+// given rendered height, used to shift the image left by that amount.
+#let hm-logo-inset(height) = 0.166 * height
+
 // Parts
 // A part divider is a level-1 heading carrying the label <part>. The heading
 // show rule renders it as a divider page; the running header and the chapter
@@ -234,7 +240,12 @@
   ]
   [# if options.cover_image #]
   #v(1fr)
-  #image("[-options.cover_image-]", width: 100%)
+  #image("[-options.cover_image-]", width: 100%, height: 13cm, fit: "cover")
+  [# endif #]
+  [# if options.cover_logo #]
+  #v(0.5cm)
+  #block(above: 0pt, below: 0pt, move(dx: 2.8cm - hm-logo-inset(1.5cm), image("[-options.cover_logo-]", height: 1.5cm)))
+  #v(0.5cm)
   [# endif #]
 ]
 
@@ -261,6 +272,10 @@
   #text(font: sans-font, size: 0.9em, fill: luma(120))[[-options.edition-]]
   [# endif #]
   #v(1fr)
+  [# if options.title_page_logo #]
+  #v(3cm)
+  #block(above: 0pt, below: 0pt, move(dx: -hm-logo-inset(1.3cm), image("[-options.title_page_logo-]", height: 1.3cm)))
+  [# endif #]
 ]
 
 // Copyright / imprint page
