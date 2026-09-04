@@ -88,6 +88,21 @@
 % writing, same discipline as the rest of the chapter (e.g. cf.cylinder
 % takes diameter not radius, verified by positionAt; ruled vs. smooth
 % loft geomTypes; toNURBS degree/pole counts on a cylinder).
+%
+% Analytic Surfaces, cylinder example (fixed after CadQuery maintainer
+% review): was cyl.Faces()[0] to grab the lateral face - an index into
+% an unordered list, which is exactly the fragility Ch. 5's selector
+% section builds its whole argument against (cf. part.Edges()[13] there,
+% held up as the bad example). Now cyl.faces("%CYLINDER"). Verified on
+% CadQuery 2.8.0 that the selector returns the lateral Face directly,
+% not a compound, and that every printed value in the paragraph below is
+% unchanged: geomType CYLINDER, uvBounds (0.0, 6.283..., 0.0, 30.0),
+% positionAt(0.0, 15.0) -> (5.0, 0.0, 15.0), normalAt -> (1.0, 0.0, 0.0).
+% Code line only - the paragraph after it is untouched. A first attempt
+% also rewrote that paragraph to explain why the selector beats an index
+% and to point at Ch. 5: pure master-rule violation (justifying the new
+% line against the old one the reader never saw, plus "geomType confirms
+% what was asked for" filler). The selector needs no defending in prose.
 
 Chapter 5 said what an edge and a face carry – a curve, a surface, and
 the parameter ranges that trim them – and left the mathematics of those
@@ -1086,7 +1101,7 @@ slant instead.
 from cadquery import func as cf
 
 cyl = cf.cylinder(10.0, 30.0)
-side = cyl.Faces()[0]
+side = cyl.faces("%CYLINDER")
 print(side.geomType(), side.uvBounds())
 
 p = side.positionAt(0.0, 15.0)

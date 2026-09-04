@@ -145,6 +145,32 @@
 % writing it and putting the verification CODE in the book are different
 % questions - only show code the reader would want to reproduce or learn
 % from, never a one-off diagnostic built purely to check a claim.
+%
+% Sweep section, locationAt shorthand (added after CadQuery maintainer
+% review): the hand-built cf.Plane(p0, (0,0,1), t0) frame stays as the
+% explanation - it is what names the pieces - and path.locationAt(0.0)
+% follows as the shorthand, NOT as a replacement. Verified on CadQuery
+% 2.8.0: for this path the two locations are identical (same 3x4
+% transformation up to a signed zero, same face center, same normal,
+% identical swept volume), so the text claims equality only "here" and
+% pins the reason - the path starts on a straight segment flat in z = 0,
+% where global-z-up and curve-derived up coincide. Do not generalize
+% that claim. Deliberately NOT claimed: anything about which frame
+% cf.sweep itself uses along the path - the next paragraph's
+% transition="transformed" bisector-plane explanation is the real
+% answer there, and an earlier draft of this insert contradicted it.
+% Also NOT claimed: that Ch. 6 defines the Frenet frame - it does not;
+% it defines the osculating circle/plane, which is what the text points
+% back to instead.
+%
+% Master-rule cleanup on that same insert: first draft opened "Spelling
+% the frame out this way is worth doing once, because it names every
+% piece" (meta-commentary on the book's own pedagogy) and closed
+% "Hand-writing cf.Plane(p0, (0,0,1), t0) commits to the fixed direction
+% without saying so; the shorthand at least makes the choice nameable"
+% (the code block three paragraphs up used as a rhetorical foil). Both
+% deleted outright. The shorthand is introduced by saying what it does;
+% the frame argument by saying what "frenet" builds.
 
 Extrude pushed a profile along a straight line; revolve spun one
 around a fixed axis. This chapter adds the two operations that free
@@ -174,6 +200,25 @@ plane = cf.Plane(p0, (0, 0, 1), t0)
 profile = cf.face(cf.wire(cf.circle(12.0))).located(plane.location)
 tube = cf.sweep(profile, path)
 ```
+
+The library packages that construction. `locationAt` reads a position and
+a local frame off a curve in a single call, and a profile can be placed
+straight onto the result:
+
+```python
+profile = cf.face(cf.wire(cf.circle(12.0))).located(path.locationAt(0.0))
+```
+
+Same face, same position, same normal: the two locations come out
+identical here, because this path starts along a straight segment lying
+flat in the $z = 0$ plane, where "up is global $z$" and "up comes from
+the curve" give the same answer.
+
+Where a path climbs out of a plane those two answers diverge, and
+`locationAt`'s `frame` argument chooses between them. Its default,
+`"frenet"`, builds the frame from the curve's own derivatives, so "up"
+follows the direction the curve bends – the osculating plane of
+Chapter 6, read at a point.
 
 `tube.isValid()` reports `True`. It is also, visibly, wrong: the path
 above bends twice at a right angle, and the swept tube pinches down to
