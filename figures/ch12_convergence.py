@@ -29,9 +29,9 @@ FREEBOARD_MIN, STABILITY_MIN = 60.0, 10.0  # mm
 
 
 def hull(body: float) -> Solid:
-    bottom = cf.sphere(2 * R_HULL).translate((0, 0, R_HULL))
-    middle = cf.cylinder(d=2 * R_HULL, h=body).translate((0, 0, R_HULL))
-    neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).translate((0, 0, R_HULL + body))
+    bottom = cf.sphere(2 * R_HULL).moved(z=R_HULL)
+    middle = cf.cylinder(d=2 * R_HULL, h=body).moved(z=R_HULL)
+    neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).moved(z=R_HULL + body)
     shape = bottom + middle + neck
     assert isinstance(shape, Solid)
     return shape

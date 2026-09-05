@@ -20,10 +20,10 @@ ellipse = cf.ellipse(20.0, 10.0)
 ellipse_offset = cf.offset2D(cf.wire(ellipse), 3.0)
 
 shapes_and_colors = [
-    (cf.wire(circle).translate((-35, 0, 0)), EDGE_COLOR),
-    (circle_offset.translate((-35, 0, 0)), OFFSET_COLOR),
-    (cf.wire(ellipse).translate((35, 0, 0)), EDGE_COLOR),
-    (ellipse_offset.translate((35, 0, 0)), OFFSET_COLOR),
+    (cf.wire(circle).moved(x=-35), EDGE_COLOR),
+    (circle_offset.moved(x=-35), OFFSET_COLOR),
+    (cf.wire(ellipse).moved(x=35), EDGE_COLOR),
+    (ellipse_offset.moved(x=35), OFFSET_COLOR),
 ]
 
 pv.OFF_SCREEN = True

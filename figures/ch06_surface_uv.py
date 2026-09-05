@@ -22,8 +22,8 @@ LIFT = 0.12  # mm along the local normal, against z-fighting
 
 sections = [
     cf.wire(cf.circle(10.0)),
-    cf.wire(cf.circle(16.0)).translate((0, 0, 25)),
-    cf.wire(cf.circle(10.0)).translate((0, 0, 50)),
+    cf.wire(cf.circle(16.0)).moved(z=25),
+    cf.wire(cf.circle(10.0)).moved(z=50),
 ]
 surface = cf.loft(sections, ruled=False)
 face = surface.Faces()[0]

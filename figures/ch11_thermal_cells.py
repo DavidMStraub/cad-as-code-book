@@ -18,11 +18,11 @@ r, h = 9.0, 65.0
 r_terminal, h_terminal = 2.5, 1.0
 
 body = cf.cylinder(d=2 * r, h=h)
-terminal = cf.cylinder(d=2 * r_terminal, h=h_terminal).translate((0, 0, h))
+terminal = cf.cylinder(d=2 * r_terminal, h=h_terminal).moved(z=h)
 cell = body + terminal
 assert isinstance(cell, Solid)
 
-cells = [cell.translate(((i - 1) * 24.0, 0, 0)) for i in range(3)]
+cells = [cell.moved(x=(i - 1) * 24.0) for i in range(3)]
 
 bottoms, sides = [], []
 for c in cells:

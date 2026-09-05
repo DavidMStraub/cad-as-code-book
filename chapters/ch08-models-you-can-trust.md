@@ -324,7 +324,7 @@ pocket_r = cell_radius + clearance
 pocket = cf.cylinder(d=2 * pocket_r, h=pocket_depth)
 
 for pitch in (18.6, 18.0):
-    other = pocket.translate((pitch, 0, 0))
+    other = pocket.moved(x=pitch)
     print(pitch, cf.intersect(pocket, other).Volume())
 ```
 

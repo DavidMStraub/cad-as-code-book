@@ -606,7 +606,7 @@ cell_21700 = replace(cell_18650, r_cell=10.5, h_cell=70.0)
 
 @pytest.mark.parametrize("spec", [cell_18650, cell_21700], ids=["18650", "21700"])
 def test_cell_seats_in_pocket(spec):
-    seated = make_cell(spec).translate((0, 0, TRAY_THICKNESS - POCKET_DEPTH))
+    seated = make_cell(spec).moved(z=TRAY_THICKNESS - POCKET_DEPTH)
     interference = seated * tray()
     assert interference.Volume() < 1e-6
 ```
@@ -653,7 +653,7 @@ shape subtracted from a block with a little clearance added.
 def fixture_for(part: Solid, clearance: float, block=(30, 30, 50), floor=5.0) -> Solid:
     grown = part + cf.offset(part.Shells()[0], clearance)
     w, d, h = block
-    result = cf.box(w, d, h) - grown.translate((0, 0, floor))
+    result = cf.box(w, d, h) - grown.moved(z=floor)
     assert isinstance(result, Solid)
     return result
 ```
@@ -701,8 +701,8 @@ def geometric_diff(a: Shape, b: Shape) -> Shape:
 
 
 plate = cf.box(60, 30, 6)
-hole_v1 = cf.cylinder(d=6, h=8).translate((-15, 0, 0))
-hole_v2 = cf.cylinder(d=6, h=8).translate((-13, 0, 0))
+hole_v1 = cf.cylinder(d=6, h=8).moved(x=-15)
+hole_v2 = cf.cylinder(d=6, h=8).moved(x=-13)
 v1 = plate - hole_v1
 v2 = plate - hole_v2
 

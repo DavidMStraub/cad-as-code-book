@@ -133,9 +133,9 @@ R_HULL, R_NECK, H_NECK = 60.0, 20.0, 80.0  # mm
 
 
 def hull(body: float) -> Solid:
-    bottom = cf.sphere(2 * R_HULL).translate((0, 0, R_HULL))
-    middle = cf.cylinder(d=2 * R_HULL, h=body).translate((0, 0, R_HULL))
-    neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).translate((0, 0, R_HULL + body))
+    bottom = cf.sphere(2 * R_HULL).moved(z=R_HULL)
+    middle = cf.cylinder(d=2 * R_HULL, h=body).moved(z=R_HULL)
+    neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).moved(z=R_HULL + body)
     shape = bottom + middle + neck
     assert isinstance(shape, Solid)
     return shape
@@ -434,13 +434,13 @@ POCKET_R = R_CELL + CLEARANCE
 def cell_holder(wall: float) -> Solid:
     outer_r = POCKET_R + wall
     rect = cf.box(2 * SPACING, 2 * outer_r, HOLDER_H)
-    cap_left = cf.cylinder(d=2 * outer_r, h=HOLDER_H).translate((-SPACING, 0, 0))
-    cap_right = cf.cylinder(d=2 * outer_r, h=HOLDER_H).translate((SPACING, 0, 0))
+    cap_left = cf.cylinder(d=2 * outer_r, h=HOLDER_H).moved(x=-SPACING)
+    cap_right = cf.cylinder(d=2 * outer_r, h=HOLDER_H).moved(x=SPACING)
     outer = rect + cap_left + cap_right
-    pocket = cf.cylinder(d=2 * POCKET_R, h=HOLDER_H + 2).translate((0, 0, -1))
+    pocket = cf.cylinder(d=2 * POCKET_R, h=HOLDER_H + 2).moved(z=-1)
     holder = outer
     for i in range(3):
-        holder = holder - pocket.translate(((i - 1) * SPACING, 0, 0))
+        holder = holder - pocket.moved(x=(i - 1) * SPACING)
     assert isinstance(holder, Solid)
     return holder
 ```

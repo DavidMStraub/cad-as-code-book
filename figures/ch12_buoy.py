@@ -16,9 +16,9 @@ DRAFT = 764.2  # mm, equilibrium at the optimum
 
 SUBMERGED_COLOR = "#5e93c5"
 
-bottom = cf.sphere(2 * R_HULL).translate((0, 0, R_HULL))
-middle = cf.cylinder(d=2 * R_HULL, h=BODY).translate((0, 0, R_HULL))
-neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).translate((0, 0, R_HULL + BODY))
+bottom = cf.sphere(2 * R_HULL).moved(z=R_HULL)
+middle = cf.cylinder(d=2 * R_HULL, h=BODY).moved(z=R_HULL)
+neck = cf.cone(d1=2 * R_HULL, d2=2 * R_NECK, h=H_NECK).moved(z=R_HULL + BODY)
 hull = bottom + middle + neck
 
 below_box = cf.box(6 * R_HULL, 6 * R_HULL, DRAFT)

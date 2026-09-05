@@ -301,7 +301,7 @@ different shapes, not two sizes of the same one:
 
 ```python
 bottom = cf.wire(cf.circle(25.0))
-top = cf.wire(cf.rect(60.0, 40.0)).translate((0, 0, 80))
+top = cf.wire(cf.rect(60.0, 40.0)).moved(z=80)
 
 duct = cf.loft([bottom, top], cap=True)
 print(duct.isValid(), [f.geomType() for f in duct.Faces()])

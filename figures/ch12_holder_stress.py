@@ -24,13 +24,13 @@ PRESSURE = 1.0
 def cell_holder(wall: float) -> Solid:
     outer_r = POCKET_R + wall
     rect = cf.box(2 * SPACING, 2 * outer_r, HOLDER_H)
-    cap_left = cf.cylinder(d=2 * outer_r, h=HOLDER_H).translate((-SPACING, 0, 0))
-    cap_right = cf.cylinder(d=2 * outer_r, h=HOLDER_H).translate((SPACING, 0, 0))
+    cap_left = cf.cylinder(d=2 * outer_r, h=HOLDER_H).moved(x=-SPACING)
+    cap_right = cf.cylinder(d=2 * outer_r, h=HOLDER_H).moved(x=SPACING)
     outer = rect + cap_left + cap_right
-    pocket = cf.cylinder(d=2 * POCKET_R, h=HOLDER_H + 2).translate((0, 0, -1))
+    pocket = cf.cylinder(d=2 * POCKET_R, h=HOLDER_H + 2).moved(z=-1)
     holder = outer
     for i in range(3):
-        holder = holder - pocket.translate(((i - 1) * SPACING, 0, 0))
+        holder = holder - pocket.moved(x=(i - 1) * SPACING)
     assert isinstance(holder, Solid)
     return holder
 

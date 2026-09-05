@@ -13,15 +13,15 @@ from cadquery import func as cf
 from _common import render
 
 width, depth, thickness = 100, 30, 6
-mounting_hole = cf.cylinder(d=3.4, h=thickness).translate((44, 12, 0))
+mounting_hole = cf.cylinder(d=3.4, h=thickness).moved(x=44, y=12)
 mounting_holes = mounting_hole + mounting_hole.mirror("YZ", basePointVector=(0, 0, 0))
 tray = cf.box(width, depth, thickness) - mounting_holes
 
 cell_radius, clearance, pocket_depth = 9.0, 0.3, 3.0
 pocket = cf.cylinder(d=2 * (cell_radius + clearance), h=pocket_depth)
-pocket = pocket.translate((0, 0, thickness - pocket_depth))
+pocket = pocket.moved(z=thickness - pocket_depth)
 for i in range(3):
-    tray = tray - pocket.translate(((i - 1) * 24.0, 0, 0))
+    tray = tray - pocket.moved(x=(i - 1) * 24.0)
 
 
 def make_cell(r_cell, h_cell, r_terminal=2.5, h_terminal=1.0):
@@ -38,7 +38,7 @@ def make_cell(r_cell, h_cell, r_terminal=2.5, h_terminal=1.0):
 
 
 cell = make_cell(9.0, 65.0)
-cells = [cell.translate(((i - 1) * 24.0, 0, thickness - pocket_depth)) for i in range(3)]
+cells = [cell.moved(x=(i - 1) * 24.0, z=thickness - pocket_depth) for i in range(3)]
 
 shapes = [tray] + cells
 colors = ["#b0b0b0"] + ["#4a86c5"] * 3

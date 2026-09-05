@@ -77,8 +77,8 @@ from cadquery import func as cf
 
 width, depth, thickness = 40, 30, 6
 plate = cf.box(width, depth, thickness)
-pocket = cf.cylinder(d=18.6, h=3).translate((0, 0, thickness - 3))
-hole = cf.cylinder(d=3.4, h=thickness).translate((16, 11, 0))
+pocket = cf.cylinder(d=18.6, h=3).moved(z=thickness - 3)
+hole = cf.cylinder(d=3.4, h=thickness).moved(x=16, y=11)
 
 base = plate - pocket
 lead_in = base.faces(">Z").edges("%CIRCLE")
@@ -139,7 +139,7 @@ width, depth, thickness = 40, 30, 6  # the same tray as Feature Order
 def tray_hardcoded():
     plate = cf.box(width, depth, thickness)
     pocket_radius = 9.0 + 0.3  # the 18650's radius, plus clearance
-    pocket = cf.cylinder(d=2 * pocket_radius, h=3).translate((0, 0, thickness - 3))
+    pocket = cf.cylinder(d=2 * pocket_radius, h=3).moved(z=thickness - 3)
     return plate - pocket
 ```
 
@@ -155,7 +155,7 @@ coincidence:
 def tray_design_intent(cell):
     plate = cf.box(width, depth, thickness)
     cell_radius = cell.BoundingBox().xlen / 2
-    pocket = cf.cylinder(d=2 * (cell_radius + 0.3), h=3).translate((0, 0, thickness - 3))
+    pocket = cf.cylinder(d=2 * (cell_radius + 0.3), h=3).moved(z=thickness - 3)
     return plate - pocket
 ```
 
@@ -190,7 +190,7 @@ not two independent decisions:
 from cadquery import func as cf
 
 width, depth, thickness = 100, 30, 6
-mounting_hole = cf.cylinder(d=3.4, h=thickness).translate((44, 12, 0))
+mounting_hole = cf.cylinder(d=3.4, h=thickness).moved(x=44, y=12)
 mounting_holes = mounting_hole + mounting_hole.mirror("YZ", basePointVector=(0, 0, 0))
 
 plate = cf.box(width, depth, thickness)
@@ -211,12 +211,11 @@ looping itself specific to the library:
 ```python
 cell_radius, clearance, pocket_depth = 9.0, 0.3, 3.0
 pocket = cf.cylinder(d=2 * (cell_radius + clearance), h=pocket_depth)
-pocket = pocket.translate((0, 0, thickness - pocket_depth))
+pocket = pocket.moved(z=thickness - pocket_depth)
 
 tray = plate_with_holes
 for i in range(3):
-    x = (i - 1) * 24.0
-    tray = tray - pocket.translate((x, 0, 0))
+    tray = tray - pocket.moved(x=(i - 1) * 24.0)
 
 print(tray.isValid(), tray.Volume())
 ```

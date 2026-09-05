@@ -365,7 +365,7 @@ of its own parameter keeps it exactly the curve it always was, just
 shorter. **Offset** is a different story. An offset curve is built by
 pushing every point of $\mathbf{C}(u)$ a constant distance $d$ outward
 along its own local unit normal $\hat{\mathbf{n}}(u)$ – the curve
-counterpart of Chapter 2's `translate`:
+counterpart of Chapter 2's `moved`:
 
 $$\mathbf{C}_{\text{offset}}(u) = \mathbf{C}(u) + d\,\hat{\mathbf{n}}(u).$$
 
@@ -1162,8 +1162,8 @@ covering every span at once.
 
 ```python
 sections = [cf.wire(cf.circle(10.0)),
-            cf.wire(cf.circle(16.0)).translate((0, 0, 25)),
-            cf.wire(cf.circle(10.0)).translate((0, 0, 50))]
+            cf.wire(cf.circle(16.0)).moved(z=25),
+            cf.wire(cf.circle(10.0)).moved(z=50)]
 print([f.geomType() for f in cf.loft(sections, ruled=True).Faces()])
 print([f.geomType() for f in cf.loft(sections, ruled=False).Faces()])
 ```

@@ -286,12 +286,12 @@ The revolved 18650 cell, with its narrower terminal knob at the top.
 
 ## Rotation, and Why Order Matters
 
-Translation, from Chapter 2, moves a shape without turning it. The
-remaining kind of movement is rotation, and it introduces something
-translation never has to worry about: the order two movements happen in
-can change the result.
+Rotation turns a shape about an axis, and combining it with a change of
+position makes the sequence of the two a real decision: the same rotation
+and the same offset, applied in the opposite order, leave the shape in a
+different place.
 
-A shape's own orientation is changed the same way its position was:
+A shape's orientation is changed the same way its position was:
 
 ```python
 rotated = terminal.moved(rz=45)

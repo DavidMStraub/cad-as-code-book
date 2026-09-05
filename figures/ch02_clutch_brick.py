@@ -16,8 +16,8 @@ def clutch_brick(
     body = cf.box(length, width, height)
     stud = cf.cylinder(d=stud_diameter, h=stud_height)
 
-    left_stud = stud.translate((-stud_spacing / 2, 0, height))
-    right_stud = stud.translate((stud_spacing / 2, 0, height))
+    left_stud = stud.moved(x=-stud_spacing / 2, z=height)
+    right_stud = stud.moved(x=stud_spacing / 2, z=height)
 
     return body + left_stud + right_stud
 

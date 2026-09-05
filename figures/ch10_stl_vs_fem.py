@@ -23,7 +23,7 @@ from cadquery import func as cf
 from _common import EDGE_COLOR, FILL_COLOR, GENERATED_DIR, _crop_to_content
 
 plate = cf.box(60, 40, 6)
-hole = cf.cylinder(d=16, h=8).translate((0, 0, -1))
+hole = cf.cylinder(d=16, h=8).moved(z=-1)
 part = plate - hole
 
 # Left: STL tessellation (surface only, tuned for shape fidelity)

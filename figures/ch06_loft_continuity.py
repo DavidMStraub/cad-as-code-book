@@ -14,11 +14,11 @@ from cadquery import func as cf
 from _common import EDGE_COLOR, FILL_COLOR, render
 
 w1 = cf.wire(cf.circle(10.0))
-w2 = cf.wire(cf.circle(16.0)).translate((0, 0, 25))
-w3 = cf.wire(cf.circle(10.0)).translate((0, 0, 50))
+w2 = cf.wire(cf.circle(16.0)).moved(z=25)
+w3 = cf.wire(cf.circle(10.0)).moved(z=50)
 
-ruled = cf.loft([w1, w2, w3], ruled=True).translate((30, 0, 0))
-smooth = cf.loft([w1, w2, w3], ruled=False).translate((-30, 0, 0))
+ruled = cf.loft([w1, w2, w3], ruled=True).moved(x=30)
+smooth = cf.loft([w1, w2, w3], ruled=False).moved(x=-30)
 
 render(
     [ruled, smooth],

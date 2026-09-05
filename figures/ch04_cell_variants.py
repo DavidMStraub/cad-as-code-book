@@ -40,8 +40,8 @@ def make_cell(spec: CellSpec):
     return cf.revolve(cf.face(cf.polyline(*points)), (0, 0, 0), (0, 0, 1))
 
 
-cell_a = make_cell(cell_18650).translate((-20, 0, 0))
-cell_b = make_cell(cell_21700).translate((20, 0, 0))
+cell_a = make_cell(cell_18650).moved(x=-20)
+cell_b = make_cell(cell_21700).moved(x=20)
 
 pv.OFF_SCREEN = True
 plotter = pv.Plotter(off_screen=True, window_size=(1400, 1000))

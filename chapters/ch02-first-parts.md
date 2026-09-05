@@ -67,17 +67,14 @@ A hole through the exact center is a special case; most are not. Moving a
 shape before combining it is one call:
 
 ```python
-hole = cf.cylinder(d=20, h=10).translate((20, 0, 0))
+hole = cf.cylinder(d=20, h=10).moved(x=20)
 part = plate - hole
 ```
 
-`translate` returns a new shape shifted by the given offset and leaves the
-original untouched – every operation in this book works this way, producing
-a result rather than changing something in place. A plain offset is all
-this chapter needs; placing a shape at an angle, or flush against a face
-that is itself tilted in space, takes a somewhat richer object, a
-**Location**, which Chapter 3 introduces alongside the rest of the spatial
-vocabulary.
+`moved` returns a new shape, shifted by the given offset. `x`, `y`, and `z`
+are the distances to move along each axis, and any of them can be left out.
+The shape it is called on keeps its position, so one shape built once can
+be placed in as many locations as a design calls for.
 
 ## Selecting What You Mean
 
@@ -137,7 +134,7 @@ def plate_with_hole(
     length: float, width: float, thickness: float, hole_diameter: float, hole_offset: float
 ) -> Shape:
     plate = cf.box(length, width, thickness)
-    hole = cf.cylinder(d=hole_diameter, h=thickness).translate((hole_offset, 0, 0))
+    hole = cf.cylinder(d=hole_diameter, h=thickness).moved(x=hole_offset)
     part = plate - hole
     hole_edge = part.faces(">Z").edges("%CIRCLE")
     return part.fillet(2.0, [hole_edge])
@@ -224,8 +221,8 @@ def clutch_brick(
     body = cf.box(length, width, height)
     stud = cf.cylinder(d=stud_diameter, h=stud_height)
 
-    left_stud = stud.translate((-stud_spacing / 2, 0, height))
-    right_stud = stud.translate((stud_spacing / 2, 0, height))
+    left_stud = stud.moved(x=-stud_spacing / 2, z=height)
+    right_stud = stud.moved(x=stud_spacing / 2, z=height)
 
     return body + left_stud + right_stud
 ```

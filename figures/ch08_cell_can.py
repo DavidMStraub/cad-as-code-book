@@ -31,7 +31,7 @@ can = cell_can(9.0, 2.0, 65.0)
 # cut the quadrant facing the default iso camera, then lay the can over
 # toward the viewer - upright, a 65 x 18 mm can renders as a page-filling
 # column (same lesson as the ch12 buoy figure)
-cutaway = can - cf.box(20, 20, 67).translate((10, 10, -1))
+cutaway = can - cf.box(20, 20, 67).moved(x=10, y=10, z=-1)
 cutaway = cutaway.rotate((0, 0, 0), (0, 1, 0), 60)
 
 render(cutaway, "ch08-cell-can", elevation_offset=-10)

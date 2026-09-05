@@ -27,13 +27,13 @@ def clutch_brick(
 ) -> Solid:
     body = cf.box(length, width, height)
     stud = cf.cylinder(d=stud_diameter, h=stud_height)
-    left_stud = stud.translate((-stud_spacing / 2, 0, height))
-    right_stud = stud.translate((stud_spacing / 2, 0, height))
+    left_stud = stud.moved(x=-stud_spacing / 2, z=height)
+    right_stud = stud.moved(x=stud_spacing / 2, z=height)
 
     cavity_width = stud_diameter - grip_clearance
     cavity_height = height - roof
     cavity = cf.box(length - 2 * wall, cavity_width, cavity_height + 1)
-    cavity = cavity.translate((0, 0, -0.5))
+    cavity = cavity.moved(z=-0.5)
     hollowed = body - cavity
 
     post_height = cavity_height + 0.5

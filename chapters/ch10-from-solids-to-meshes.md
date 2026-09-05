@@ -193,7 +193,7 @@ directly and returns a `meshio.Mesh` object in Python.
 
 ```python
 plate = cf.box(60, 40, 6)
-hole = cf.cylinder(d=16, h=8).translate((0, 0, -1))  # overshoots both faces
+hole = cf.cylinder(d=16, h=8).moved(z=-1)  # overshoots both faces
 part = plate - hole
 ```
 
@@ -251,13 +251,13 @@ def clutch_brick(
 ) -> Solid:
     body = cf.box(length, width, height)
     stud = cf.cylinder(d=stud_diameter, h=stud_height)
-    left_stud = stud.translate((-stud_spacing / 2, 0, height))
-    right_stud = stud.translate((stud_spacing / 2, 0, height))
+    left_stud = stud.moved(x=-stud_spacing / 2, z=height)
+    right_stud = stud.moved(x=stud_spacing / 2, z=height)
 
     cavity_width = stud_diameter - grip_clearance
     cavity_height = height - roof
     cavity = cf.box(length - 2 * wall, cavity_width, cavity_height + 1)
-    cavity = cavity.translate((0, 0, -0.5))
+    cavity = cavity.moved(z=-0.5)
     hollowed = body - cavity
 
     post_height = cavity_height + 0.5

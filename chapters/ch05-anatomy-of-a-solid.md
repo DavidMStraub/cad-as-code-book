@@ -307,7 +307,7 @@ seeing fail before seeing what catches it:
 
 ```python
 plate = cf.box(60, 40, 10)
-hole = cf.cylinder(d=10, h=10).translate((25, 15, 0))
+hole = cf.cylinder(d=10, h=10).moved(x=25, y=15)
 corners = plate.edges("|Z")
 
 result = (plate - hole).fillet(8, corners)
@@ -339,7 +339,7 @@ valid. Suppose an edge is picked out once, found correct, and hardcoded:
 
 ```python
 plate = cf.box(60, 40, 10)
-hole = cf.cylinder(d=10, h=10).translate((15, 0, 0))
+hole = cf.cylinder(d=10, h=10).moved(x=15)
 part = plate - hole
 
 hole_rim = part.Edges()[13]
@@ -352,7 +352,7 @@ changes – a second, smaller clearance hole is added near one corner, an
 entirely ordinary revision that has nothing to do with the first hole:
 
 ```python
-corner_hole = cf.cylinder(d=4, h=10).translate((26, 16, 0))
+corner_hole = cf.cylinder(d=4, h=10).moved(x=26, y=16)
 part = plate - hole - corner_hole
 
 hole_rim = part.Edges()[13]
@@ -401,8 +401,8 @@ import math
 from cadquery.selectors import RadiusNthSelector
 
 plate = cf.box(60, 40, 10)
-hole = cf.cylinder(d=10, h=10).translate((15, 0, 0))
-corner_hole = cf.cylinder(d=4, h=10).translate((26, 16, 0))
+hole = cf.cylinder(d=10, h=10).moved(x=15)
+corner_hole = cf.cylinder(d=4, h=10).moved(x=26, y=16)
 part = plate - hole - corner_hole
 
 main_hole_rim = part.faces(">Z").edges(RadiusNthSelector(-1))

@@ -23,7 +23,7 @@ def make(transition, offset):
     t0 = edge0.tangentAt(0.0, mode="parameter")
     plane = cf.Plane(p0, (0, 0, 1), t0)
     profile = cf.face(cf.wire(cf.circle(6.0))).located(plane.location)
-    return cf.sweep(profile, path, transition=transition).translate(offset)
+    return cf.sweep(profile, path, transition=transition).moved(offset)
 
 shapes = [
     make("transformed", (-90, 0, 0)),
