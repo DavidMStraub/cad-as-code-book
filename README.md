@@ -19,11 +19,11 @@ URN `urn:nbn:de:bvb:m347-opus-13585`
 
 The book is in three parts:
 
-1. **Getting started** — the case for CAD as code, first parts, profiles into
+1. **Getting started** – the case for CAD as code, first parts, profiles into
    solids, designing with parameters
-2. **How the kernel sees it** — the anatomy of a solid, the mathematics of
+2. **How the kernel sees it** – the anatomy of a solid, the mathematics of
    shape, freeform modeling
-3. **Engineering with it** — models you can trust, assemblies and release
+3. **Engineering with it** – models you can trust, assemblies and release
    pipelines, from solids to meshes, simulation, searching the design space
 
 ## Repository layout
@@ -40,8 +40,7 @@ The book is in three parts:
 ## Building the book
 
 The PDF build needs only [MyST](https://mystmd.org) and
-[Typst](https://typst.app) — **not** the Python CAD stack, because the
-generated figures are committed.
+[Typst](https://typst.app), because the generated figures are committed.
 
 ```bash
 npm install -g mystmd     # myst v1.10+
@@ -69,21 +68,21 @@ uv sync --group figures
 uv run make figures
 ```
 
-Figures are rendered off-screen with PyVista/VTK. Output is **GPU- and
-driver-dependent**: rendered PNGs will not be byte-identical across machines
-even at identical package versions, so figure changes are reviewed by looking
-at the images, not by diffing them.
+Figures are rendered off-screen with PyVista/VTK. Output depends on the GPU and
+driver, so the same script on another machine gives a visually identical file
+with different bytes, even at identical package versions. Review a figure
+change by opening the image.
 
 ## License
 
 This repository is dual-licensed:
 
-- **The book** — all prose in `chapters/` and all figures in `figures/generated/`
-  and `figures/static/` — is licensed under
+- **The book** – all prose in `chapters/` and all figures in
+  `figures/generated/` and `figures/static/` – is licensed under
   [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
   (see [`LICENSE`](LICENSE)).
-- **The code** — all code examples in the text, the figure scripts in
-  `figures/`, and the Typst template in `template/` — is licensed under the
+- **The code** – all code examples in the text, the figure scripts in
+  `figures/`, and the Typst template in `template/` – is licensed under the
   MIT License (see [`LICENSE-CODE`](LICENSE-CODE)), so you can lift anything
   from the book into your own work without attribution obligations.
 
@@ -94,4 +93,4 @@ GitHub.
 
 ## Contributing
 
-Corrections are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Corrections are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
