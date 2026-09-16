@@ -1,0 +1,33 @@
+[project]
+name = "cad-as-code-book"
+version = "0"
+description = "CAD as Code: Parametric Modeling and Engineering with Python"
+requires-python = ">=3.11"
+# Building the book needs no Python at all — figures/generated/ is committed,
+# and the PDF is produced by MyST + Typst. Everything below is only for
+# regenerating figures.
+dependencies = []
+
+[dependency-groups]
+# The stack the figure scripts run against, pinned to the exact versions that
+# produced the committed figures. Install with:  uv sync --group figures
+figures = [
+    "cadquery==2.8.0",
+    # Must stay below 8.x: cadgmsh imports TopTools_IndexedMapOfShape, which
+    # the OCCT 8 bindings no longer expose. A fresh resolve picks 8.x and
+    # fails at import, so this pin is load-bearing, not just reproducibility.
+    "cadquery-ocp==7.9.3.1",
+    "cadgmsh==0.2.0",
+    "gmsh==4.15.2",
+    "matplotlib==3.10.5",
+    "numpy==2.3.0",
+    "pillow==12.2.0",
+    "pyvista==0.48.4",
+    "pyvista-cad==0.0.5",
+    "scikit-fem==11.0.0",
+    "scipy==1.16.1",
+]
+
+[tool.uv]
+# This repository is a book, not an installable package.
+package = false
