@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+title: "CAD as Code: Parametric Modeling and Engineering with Python"
+message: "If you use this book, please cite it as below."
+type: book
+authors:
+  - given-names: David M.
+    family-names: Straub
+abstract: >-
+  A book on parametric modeling and engineering with Python, covering
+  boundary representations, the mathematics of curves and surfaces,
+  freeform modeling, testable and release-ready models, meshing,
+  simulation, and design-space search, using CadQuery and the OpenCascade
+  kernel throughout.
+keywords:
+  - CAD
+  - parametric modeling
+  - computational geometry
+  - CadQuery
+  - OpenCascade
+  - Python
+  - engineering design
+  - finite element method
+license: CC-BY-4.0
+doi: 10.60948/OPUS-1358
+identifiers:
+  - type: doi
+    value: 10.60948/OPUS-1358
+    description: DOI of the published book
+  - type: other
+    value: "urn:nbn:de:bvb:m347-opus-13585"
+    description: URN of the published book
+publisher:
+  name: HM Munich University of Applied Sciences
+year: 2026
