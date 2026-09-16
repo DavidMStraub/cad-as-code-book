@@ -15,7 +15,6 @@ project:
         paper: a4
         accent_color: "#2C3E50"
         font_size: 11pt
-        edition: Draft
         year: "2026"
         publisher: HM Munich University of Applied Sciences
         urn: "urn:nbn:de:bvb:m347-opus-13585"
