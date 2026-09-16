@@ -28,11 +28,10 @@ STROKE_WIDTH = 2.6
 DOT_RADIUS = 8.0
 FONT_SIZE = 28
 
-# Panels are packed about as tightly as the widest drawing (the compound's
-# container) and the longest label ("compound") allow: the figure runs the
-# full text width in print, so the tighter the row, the larger everything in
-# it ends up on the page.
-PANEL_STEP = 145  # horizontal distance between panel centers
+# The figure runs the full text width in print, so PANEL_STEP trades
+# breathing room between drawings against how large each one ends up on
+# the page.
+PANEL_STEP = 175  # horizontal distance between panel centers
 PANEL_PAD = 12  # left/right margin, so the compound's container has air
 SHAPE_Y = 80  # vertical center of the shape area, in SVG coordinates
 LABEL_Y = 180  # baseline of the label row

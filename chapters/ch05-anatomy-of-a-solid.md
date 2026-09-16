@@ -146,7 +146,7 @@ particular connectivity promised at all – two unrelated solids in one
 container are already a valid compound.
 
 :::{figure} ../figures/static/ch05-brep-primitives.svg
-:width: 85%
+:width: 100%
 
 The seven topological primitives, in increasing dimension: a point, a
 curved or straight piece bounded by points, a connected chain of those
