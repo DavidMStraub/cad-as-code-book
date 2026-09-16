@@ -91,6 +91,7 @@ This repository is dual-licensed:
 See [`CITATION.cff`](CITATION.cff), or use the "Cite this repository" button on
 GitHub.
 
-## Contributing
+## Corrections
 
-Corrections are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+If you find an error, please open an issue. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
