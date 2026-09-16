@@ -1,0 +1,22 @@
+# Normalize line endings for text the book is made of.
+*.md    text eol=lf
+*.py    text eol=lf
+*.typ   text eol=lf
+*.yml   text eol=lf
+*.toml  text eol=lf
+
+# Rendered figures are build output committed for convenience: keep them out of
+# GitHub's language stats and collapse them in diffs, where a binary delta says
+# nothing useful anyway.
+figures/generated/**  linguist-generated=true
+figures/static/*.png  linguist-generated=true
+
+*.png   binary
+*.jpg   binary
+*.pdf   binary
+
+# The Typst template is vendored infrastructure, not the subject of the repo.
+template/**  linguist-vendored=true
+
+# This is a book, not a Python project — classify it by its prose.
+*.md    linguist-detectable=true

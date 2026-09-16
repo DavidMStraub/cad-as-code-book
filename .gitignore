@@ -11,9 +11,10 @@ private/
 Thumbs.db
 desktop.ini
 
-# Editors
+# Editors / tooling
 .vscode/
 .idea/
+.claude/settings.local.json
 *.swp
 *.swo
 *~
