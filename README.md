@@ -1,6 +1,6 @@
 # CAD as Code
 
-<a href="https://github.com/DavidMStraub/cad-as-code-book/releases/latest"><img src=".github/cover.png" alt="Cover of CAD as Code" width="220" align="right"></a>
+<img src=".github/cover.png" alt="Cover of CAD as Code" width="220" align="right">
 
 **Parametric Modeling and Engineering with Python**
 by David M. Straub
@@ -11,11 +11,11 @@ models you can test and release, meshing, simulation, and searching a design
 space. It uses [CadQuery](https://github.com/CadQuery/cadquery) and the
 OpenCascade kernel throughout.
 
-📖 **[Download the latest PDF](https://github.com/DavidMStraub/cad-as-code-book/releases/latest)**
-
 Published by HM Munich University of Applied Sciences.
 DOI [10.60948/OPUS-1358](https://doi.org/10.60948/OPUS-1358) ·
 URN `urn:nbn:de:bvb:m347-opus-13585`
+
+<br clear="right">
 
 ## Contents
 
