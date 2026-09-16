@@ -1,0 +1,70 @@
+name: Figure toolchain
+
+# The book itself builds without any of this — figures/generated/ is committed.
+# This job only guards against dependency rot in the figure scripts: it checks
+# that the pinned CAD/simulation stack still resolves and installs, and that
+# every figure script still imports cleanly against it.
+#
+# It deliberately does NOT render. PyVista/VTK output is GPU- and
+# driver-dependent, so a CI render would differ from a local one without
+# either being wrong.
+
+on:
+  push:
+    branches: [main]
+    paths: ["figures/**", "pyproject.toml", "uv.lock", ".github/workflows/figures.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["figures/**", "pyproject.toml", "uv.lock", ".github/workflows/figures.yml"]
+  schedule:
+    - cron: "0 6 1 * *" # monthly, to catch upstream breakage early
+  workflow_dispatch:
+
+jobs:
+  resolve:
+    name: Resolve and import-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system libraries for VTK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 libglx-mesa0 libxrender1 libxcursor1 libxft2 libxinerama1
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install the pinned figure stack
+        run: uv sync --group figures --locked
+
+      - name: Syntax-check every figure script
+        run: uv run python -m compileall -q figures/
+
+      - name: Import-check the third-party stack
+        run: |
+          uv run python - <<'PY'
+          import importlib, importlib.metadata as md
+          mods = ["cadquery", "OCP", "numpy", "scipy", "matplotlib",
+                  "skfem", "pyvista", "pyvista_cad", "cadgmsh", "gmsh", "PIL"]
+          for m in mods:
+              importlib.import_module(m)
+              print(f"ok  {m}")
+          print()
+          for d in ["cadquery", "cadquery-ocp", "pyvista", "pyvista-cad",
+                    "cadgmsh", "scikit-fem", "gmsh"]:
+              print(f"{d}=={md.version(d)}")
+          PY
+
+      - name: Check the pyvista_cad API the figures rely on
+        run: |
+          uv run python - <<'PY'
+          import inspect, pyvista_cad as pc
+          sig = inspect.signature(pc.add_cad)
+          print("add_cad", sig)
+          for kw in ["color", "edges", "edge_color", "line_width", "smooth"]:
+              assert kw in sig.parameters, f"pyvista_cad.add_cad lost keyword: {kw}"
+          print("pyvista_cad.add_cad signature OK")
+          PY

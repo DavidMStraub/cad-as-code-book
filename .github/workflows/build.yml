@@ -1,0 +1,83 @@
+name: Build book
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  TYPST_VERSION: "0.15.0"
+  MYST_VERSION: "1.10.1"
+
+jobs:
+  build:
+    name: Build PDF
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed only for the release step on tags
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The template's font stack: Linux Libertine O (body),
+      # IBM Plex Sans (headings), Fira Code / IBM Plex Mono (code).
+      # Without these Typst silently substitutes and the PDF looks wrong.
+      - name: Install fonts and PDF tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fonts-linuxlibertine fonts-ibm-plex fonts-firacode poppler-utils
+          fc-cache -f
+
+      - name: Install Typst ${{ env.TYPST_VERSION }}
+        run: |
+          curl -fsSL -o typst.tar.xz \
+            "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz"
+          tar -xf typst.tar.xz
+          sudo install -m755 typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst
+          typst --version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install MyST ${{ env.MYST_VERSION }}
+        run: npm install -g "mystmd@${MYST_VERSION}"
+
+      - name: Verify the template's fonts all resolve
+        run: |
+          missing=0
+          for f in "Linux Libertine O" "IBM Plex Sans" "IBM Plex Mono" "Fira Code"; do
+            if typst fonts | grep -qxF "$f"; then
+              echo "ok: $f"
+            else
+              echo "MISSING: $f"; missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Build
+        run: make build
+
+      - name: Check the PDF is non-trivial
+        run: |
+          test -f main.pdf
+          pages=$(pdfinfo main.pdf | awk '/^Pages:/ {print $2}')
+          echo "main.pdf: $pages pages, $(du -h main.pdf | cut -f1)"
+          test "$pages" -gt 100
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: main.pdf
+          path: main.pdf
+          if-no-files-found: error
+
+      - name: Attach PDF to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: main.pdf
+          generate_release_notes: true
