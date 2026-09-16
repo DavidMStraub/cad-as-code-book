@@ -101,11 +101,6 @@ with a notch, a chamfered corner, an outline traced point by point – and
 that is the case extrude exists for. This chapter's second worked shape,
 later in the chapter, is exactly such a case.
 
-% Verified against installed CadQuery 2.8 (2026-07-11): cf.rect(w: float,
-% h: float) -> Wire, centered on the origin in the XY plane at z=0
-% (checked via BoundingBox: x in [-13.5, 13.5], y in [-74, 74], z=0 for
-% rect(27, 148)); extrude(s: Shape, d: VectorLike, both: bool = False,
-% ...) -> Shape.
 
 For an outline with no simple name, a profile can be built point by point
 and closed into a face directly:

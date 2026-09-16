@@ -1,32 +1,5 @@
 # Anatomy of a Solid
 
-% Status: full draft, restructured around CAx-Programmierung lecture 02
-% (private/CAx-Programmierung - 02 Topologie.md). Canonical home for B-Rep
-% hierarchy, orientation, validity, the topological naming problem, and
-% the full selector toolkit. Builds on Ch. 2's vocabulary (Solid, Face,
-% Edge, Vertex introduced there by use) rather than re-teaching it from
-% zero, but goes properly systematic here: every one of the seven B-Rep
-% element types gets a real definition, not just the four Ch. 2 needed.
-% Concepts are explained in prose first; code verifies, never substitutes.
-% 2026-07-11: intro paragraph added; seam walk-through now explains the
-% uses-vs-unique-elements distinction (show_topology prints the lateral
-% face's wire with FOUR edge entries - the seam twice - while Edges()
-% reports three; previously unexplained, a careful reader would trip);
-% orientation explanation corrected - opposite box faces do NOT share one
-% reflected plane, each has its own plane at its own origin, what they
-% share is the plane normal's direction (verified: both x-faces' plane
-% axes point along +x, xmax face FORWARD, xmin REVERSED); Ch. 4 callback
-% updated (locating boss replaced by the lead-in example there);
-% show_topology uses Shape.ShapeType() - returns clean names ("Solid"),
-% no OCP-level wrapped access needed. All
-% runnable claims re-verified in this environment: cylinder 3/3/2, shell
-% of 5 faces valid, shared-edge loop prints 2 centers, plate 7/15/29
-% appearances, fillet-vs-hole isValid()==False with Volume() 22551.5
-% (bare edge compound to fillet() works - iteration yields edges; only
-% [compound] in a list breaks), Edges()[13] CIRCLE->LINE after the
-% corner hole, RadiusNthSelector radius 5.0, STEP round-trip volume
-% delta 1.3e-10.
-
 This chapter opens the solid up. Chapter 2 counted a plate's faces,
 edges, and vertices and promised the full story later; this is that
 story: what a boundary representation is made of, how its pieces

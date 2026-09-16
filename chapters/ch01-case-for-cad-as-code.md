@@ -54,7 +54,6 @@ available to mechanical design at the moment the design becomes text. Convention
 support these operations on their content – which is why managing them
 requires dedicated infrastructure around the files rather than tools that
 look inside them.
-% Optional figure, Ch. 9 forward-ref: geometric diff of two revisions.
 
 Because the model is executable, it can be run – and rerun. A parametric
 family is the same function evaluated over a table of inputs; a change
@@ -154,8 +153,6 @@ translation. In this book meshes appear where they belong – as derived
 output for printing and simulation (Part III), never as the form in which a
 design is kept.
 
-% Figure: the same part three ways – CSG expression tree, B-Rep with faces
-% and edges drawn, mesh with visible triangles at coarse tolerance.
 
 Where does that leave the recipe – the operations, their order, their
 parameters? Graphical CAD systems record it as a **feature tree** alongside the
@@ -239,8 +236,6 @@ all of this lies the ordinary Python ecosystem, including the meshing,
 simulation, and optimization libraries of Part III. Every layer is open
 source.
 
-% Figure: the layer diagram – kernel, bindings, modeling library, viewers,
-% surrounding ecosystem.
 
 It is worth stating what kind of software this is. Readers who know the
 scripting facilities of graphical CAD systems – macros, journals, embedded

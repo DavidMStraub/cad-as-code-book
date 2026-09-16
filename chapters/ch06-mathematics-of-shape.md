@@ -1,108 +1,5 @@
 # The Mathematics of Shape
 
-% Status: chapter drafted in full, Curves as Parametric Functions
-% through Surfaces. See private/book-plan.md §2 (Ch. 6) and §8.1 for
-% the open depth-control decision, and
-% private/CAx-Programmierung - 03/04 Geometrie I/II.md for the source
-% lectures this chapter draws its formulas and worked examples from
-% directly. This is a math chapter: formulas carry the argument, code
-% verifies specific claims after each one rather than doing the
-% explaining itself - keep that ratio in any further drafting.
-% Every figure in the chapter is generated (figures/ch06_*.py) from
-% numbers independently verified against the real kernel (OCP/OCCT
-% directly where the func API doesn't reach, e.g. the NURBS weights
-% example) before being drawn - keep that discipline for Surfaces too.
-% Merges lectures 03+04 into one continuous argument rather than the
-% course's two-week split. Section 2's ellipse offset is deliberately
-% undersold on first appearance - the new curve type (OFFSET) is a thin,
-% cheap wrapper, not a complicated object, and the section says so
-% plainly rather than pretending otherwise. The real escalation (degree
-% 2 to degree 12, one edge to four, once expressed as NURBS) is the
-% payoff at the end of the NURBS section, cashing in the forward
-% pointer left at the end of §2. Canonical home (per the book-plan's
-% lookup table) for curve/surface math, NURBS, and continuity; must be
-% self-contained enough for a reader who jumps in here directly.
-% 2026-07-11: intro paragraph added; two stale "Fourier series" capstone
-% references fixed to the NACA wing Ch. 7 actually builds (the Fourier
-% cross-sections belonged to the cut W7-X vessel); the two
-% \begin{cases} formulas rewritten in side-condition form - the
-% tex-to-typst bug noted below is STILL live (verified in the built PDF:
-% both formulas rendered as "N =" with nothing after), and the rewrite
-% renders correctly everywhere rather than waiting on upstream;
-% Cox-de Boor subsection moved from the NURBS section into Building
-% Curves (it defines B-spline machinery; NURBS's opening no longer
-% leans on a "previous subsection" that had drifted anyway); "Curve
-% Properties in CadQuery" heading and two in-prose "CadQuery"s
-% reworded per the keep-the-brand-out-of-prose rule; "X's own" tic
-% swept. Spot-re-verified this session: ellipse length 97.01 /
-% curvatures 0.2, 0.025; offset edges all OFFSET; cylinder face
-% uvBounds (0, 2pi, 0, 30), positionAt (5,0,15), normalAt (1,0,0);
-% loft CONE,CONE vs BSPLINE; cf.fillet(box, edges, r) -> PLANE,
-% CYLINDER, SPHERE.
-% Same day, per David: Surfaces opening expanded - u,v explained as
-% coordinates ON the surface (plane -> in-plane x,y; sphere ->
-% longitude/latitude; cylinder -> angle/height), isolines named, and
-% the trimming asymmetry stated plainly (an edge trims with an interval;
-% a face's boundary curves live in the (u,v) domain and are isolines
-% only in special cases - plate-with-hole top face as the worked
-% contrast). New figure ch06_surface_uv.py: the smooth loft with its
-% isoline grid overlaid (sampled via Face.positionAt, near-white lines
-% like the ch05 seam figure; u/v arrows + labels drawn in image space
-% with PIL - in-scene VTK labels were unreadable and screenshot(scale=2)
-% drops 2D text actors).
-% Parameter-range claim verified three levels deep (David asked, since
-% build123d always shows [0,1]): Geom_CylindricalSurface.Value(pi, 15)
-% = (-5, 0, 15), BRepTools.UVBounds = (0, 2pi, 0, 30), and cq
-% Face.positionAt(pi, 15) matches - cq passes OCCT's native parameters
-% through unchanged; the loft face's [0,1]x[0,1] is the B-spline knot
-% range, also native. build123d's position_at normalizes to [0,1] as a
-% wrapper convention - Appendix B phrasebook material, not for this
-% chapter's prose.
-% Try It box added 2026-07-11 (the chapter had no exercises - the only
-% content chapter without them). All three verified solvable in this
-% environment first: sphere uvBounds (0, 2pi, -pi/2, pi/2), torus
-% (0, 2pi, 0, 2pi); single 5-pt spline curvature varies smoothly
-% around the middle data point (0.199 -> 0.207 across +-0.5% of
-% length) while two splines joined there disagree (0.0143 vs 0.0089,
-% and tangents mismatch - G0 joint); closed-profile offset2D returns
-% CIRCLE + OFFSET edges (10 total), the CIRCLEs being arc joins at the
-% closure corner. A fourth candidate (read the fillet patch's NURBS
-% degree/rational flags, "a fillet is the exact-circle machinery") was
-% DROPPED: BRep_Tool on the fillet's toNURBS gives UDegree 2 /
-% VDegree 1 but IsURational False / IsVRational True - a muddled
-% orientation story that would confuse rather than teach; don't re-add
-% without understanding why the rational flag lands on the linear
-% direction. The old "direct analogue of what an Edge
-% carries" sentence was overclaiming exactly this point and is gone;
-% also fixed a backward-looking tic in the normalAt sentence.
-%
-% Surfaces is a standalone "## Surfaces" heading, not a Continuity
-% subsection, written with comparable rigor to the curve sections
-% (parametric surfaces + the analytic family, sweep/loft as the surface
-% analogue of control-point curves - forward-referencing Chapter 7's
-% actual operations rather than teaching them here, NURBS surfaces via
-% the cylinder-as-tensor-product example, surface continuity via
-% fillet), self-contained enough that lifting it into its own chapter
-% later, if book-plan §8.9 resolves that way, is a mechanical cut rather
-% than a rewrite. Every claim checked directly against cf/OCP before
-% writing, same discipline as the rest of the chapter (e.g. cf.cylinder
-% takes diameter not radius, verified by positionAt; ruled vs. smooth
-% loft geomTypes; toNURBS degree/pole counts on a cylinder).
-%
-% Analytic Surfaces, cylinder example (fixed after CadQuery maintainer
-% review): was cyl.Faces()[0] to grab the lateral face - an index into
-% an unordered list, which is exactly the fragility Ch. 5's selector
-% section builds its whole argument against (cf. part.Edges()[13] there,
-% held up as the bad example). Now cyl.faces("%CYLINDER"). Verified on
-% CadQuery 2.8.0 that the selector returns the lateral Face directly,
-% not a compound, and that every printed value in the paragraph below is
-% unchanged: geomType CYLINDER, uvBounds (0.0, 6.283..., 0.0, 30.0),
-% positionAt(0.0, 15.0) -> (5.0, 0.0, 15.0), normalAt -> (1.0, 0.0, 0.0).
-% Code line only - the paragraph after it is untouched. A first attempt
-% also rewrote that paragraph to explain why the selector beats an index
-% and to point at Ch. 5: pure master-rule violation (justifying the new
-% line against the old one the reader never saw, plus "geomType confirms
-% what was asked for" filler). The selector needs no defending in prose.
 
 Chapter 5 said what an edge and a face carry – a curve, a surface, and
 the parameter ranges that trim them – and left the mathematics of those
@@ -628,14 +525,6 @@ are simple enough to see directly. Degree $0$ (order $k=1$) is a bare
 step function, equal to $1$ on exactly one knot span and $0$ everywhere
 else,
 
-% Formulas deliberately written in side-condition form, not
-% \begin{cases}: mystmd's typst math export (via the bundled
-% tex-to-typst) drops cases content entirely - both formulas rendered
-% as "N = " with nothing after the equals sign in the built PDF, still
-% reproducible 2026-07-11 - and \left\{...\right. crashes the typst
-% compile. If the upstream bug is ever fixed, these could be folded
-% back into cases form, but the side-condition form is correct and
-% renders in every target.
 
 $$N_{i,0}(u) = 1 \ \text{ for } t_i \le u < t_{i+1}, \qquad N_{i,0}(u) = 0 \ \text{ otherwise},$$
 

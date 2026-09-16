@@ -1,32 +1,5 @@
 # Designing with Parameters
 
-% Status: full draft, all sections. See private/book-plan.md §2 (Ch. 4).
-% Narrative: instead of five independent topics each with its own
-% standalone example, the chapter follows one continuous build - a tray
-% for Chapter 3's cell - where each concept (feature order, design
-% intent, patterns, parameter sets) is the next real decision that comes
-% up while building it, not a separate demonstration bolted on. The three
-% ambitious artifacts (hex-packed cells, the 18650/21700/4680 variant
-% generator, the data-driven enclosure) stay reserved as reader-built
-% exercises, scaling up the same tray rather than repeating what the
-% chapter already solved.
-% 2026-07-11: intro paragraph added; §4 now closes the loop back to the tray
-% (tray_design_intent(make_cell(...)) - verified working). Empirical
-% claims re-verified in this environment: BoundingBox().xlen exactly
-% 18.0 / 21.0 (no tolerance slack) for the revolved cells;
-% mirror("YZ", basePointVector=...) signature current.
-% §1 reworked same day, on David's judgment that the original locating-
-% boss/corner-fillet example was contrived (a material collision requires
-% a placement that is already a bug, and the boss never reappeared on the
-% tray). New anchor: selector re-evaluation - the code-CAD-specific order
-% dependence (a GUI tree pins persistent references; code re-runs the
-% query), demonstrated on the tray's real features (pocket lead-in fillet
-% vs. mounting hole). Verified: "%CIRCLE" on the top face captures 1 edge
-% before the hole exists, 2 after; both orders isValid()==True; volume
-% difference 2.593 mm^3. Note fillet() needs real Edge objects - pass
-% selection.Edges(), not the compound in a list (a multi-edge compound
-% raises TypeError; ch2's [hole_edge] only works because a single match
-% returns a bare Edge).
 
 A model whose dimensions are parameters is a model built to be
 rebuilt: every value might be different tomorrow, and the construction

@@ -40,12 +40,6 @@ another – material is removed wherever the two overlap – so `part` is a
 plate with a hole bored straight through its center. Calling `show` sends
 the result to the viewer.
 
-% Width compensated (64% declared for an intended ~41%): a typst layout bug
-% squares the percentage for a figure this close after a chapter's opening
-% heading + first code block. 2026-07-11: the new chapter intro paragraph
-% changes which page this figure lands on, and with it whether the bug
-% fires - deliberately left alone for now, to be settled once the book's
-% content is stable and final layout starts.
 :::{figure} ../figures/generated/ch02-plate-with-hole.png
 :width: 64%
 
@@ -191,8 +185,6 @@ could ask for a face and then an edge on it: those things are not metaphors
 or screen decorations, but real parts of the model that can be queried
 directly.
 
-% Figure: the plate-with-hole solid, faces/edges/vertices called out, next
-% to the small hierarchy diagram (Solid -> Face -> Edge -> Vertex).
 
 Chapter 5 returns to this hierarchy in depth – how faces and edges are
 shared, what orientation means, why the counts come out exactly this way.
