@@ -27,11 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system libraries for VTK
+      # Every non-libc entry in `objdump -p libgmsh.so | grep NEEDED`, which
+      # also covers what VTK needs to import. gmsh links libGLU even for
+      # headless meshing, so a missing one fails at import, not at render.
+      - name: Install system libraries for gmsh and VTK
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libgl1 libglx-mesa0 libxrender1 libxcursor1 libxft2 libxinerama1
+            libgl1 libglu1-mesa libglx-mesa0 libfontconfig1 \
+            libx11-6 libxcursor1 libxext6 libxfixes3 libxft2 \
+            libxinerama1 libxrender1
 
       - uses: astral-sh/setup-uv@v5
         with:
