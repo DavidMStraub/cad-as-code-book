@@ -145,14 +145,15 @@ built starts as. A **compound** is simply a collection of shapes with no
 particular connectivity promised at all – two unrelated solids in one
 container are already a valid compound.
 
-:::{figure} ../figures/static/ch05-brep-primitives.png
+:::{figure} ../figures/static/ch05-brep-primitives.svg
 :width: 85%
 
 The seven topological primitives, in increasing dimension: a point, a
 curved or straight piece bounded by points, a connected chain of those
 pieces (shown closed here, though a wire need not be), a bounded patch
-of surface, a connected set of patches, a volume they enclose, and an
-unstructured collection of any of the above.
+of surface, a connected set of patches (shown here as a box missing its
+lid), a volume they enclose, and an unstructured collection of any of
+the above.
 :::
 
 Four of these seven carry a piece of geometry that is genuinely their
