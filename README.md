@@ -1,5 +1,7 @@
 # CAD as Code
 
+<a href="https://github.com/DavidMStraub/cad-as-code-book/releases/latest"><img src=".github/cover.png" alt="Cover of CAD as Code" width="220" align="right"></a>
+
 **Parametric Modeling and Engineering with Python**
 by David M. Straub
 
