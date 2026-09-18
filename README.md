@@ -19,14 +19,26 @@ URN `urn:nbn:de:bvb:m347-opus-13585`
 
 ## Contents
 
-The book is in three parts:
+**Part I: Parts from Code**
 
-1. **Getting started** – the case for CAD as code, first parts, profiles into
-   solids, designing with parameters
-2. **How the kernel sees it** – the anatomy of a solid, the mathematics of
-   shape, freeform modeling
-3. **Engineering with it** – models you can trust, assemblies and release
-   pipelines, from solids to meshes, simulation, searching the design space
+1. The Case for CAD as Code
+2. First Parts
+3. Profiles into Solids
+4. Designing with Parameters
+
+**Part II: Under the Hood**
+
+5. Anatomy of a Solid
+6. The Mathematics of Shape
+7. Freeform Modeling
+
+**Part III: Engineering as Software**
+
+8. Models You Can Trust
+9. Assemblies and Release Pipelines
+10. From Solids to Meshes
+11. Simulation
+12. Searching the Design Space
 
 ## Repository layout
 
