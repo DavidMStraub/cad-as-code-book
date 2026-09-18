@@ -457,8 +457,8 @@ kink would.
 
 That is a fair trade for a curve with a handful of segments, tuned by a
 person one at a time – which is exactly why piecewise Bézier curves,
-nothing more elaborate, are still what SVG paths, PostScript and
-TrueType font outlines, and every vector illustration tool use for
+nothing more elaborate, are still what SVG paths, digital font
+outlines, and every vector illustration tool use for
 two-dimensional artwork; the figure below traces one such outline,
 control handles and all, directly from the font this page is set in.
 The kernel underneath this book's tools
