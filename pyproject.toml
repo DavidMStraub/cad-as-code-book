@@ -13,11 +13,8 @@ dependencies = []
 # produced the committed figures. Install with:  uv sync --group figures
 figures = [
     "cadquery==2.8.0",
-    # Must stay below 8.x: cadgmsh imports TopTools_IndexedMapOfShape, which
-    # the OCCT 8 bindings no longer expose. A fresh resolve picks 8.x and
-    # fails at import, so this pin is load-bearing, not just reproducibility.
     "cadquery-ocp==7.9.3.1",
-    "cadgmsh==0.2.0",
+    "cadgmsh==0.3.0",
     "gmsh==4.15.2",
     "matplotlib==3.10.5",
     "numpy==2.3.0",

@@ -179,7 +179,7 @@ figures = [
 
 [package.metadata.requires-dev]
 figures = [
-    { name = "cadgmsh", specifier = "==0.2.0" },
+    { name = "cadgmsh", specifier = "==0.3.0" },
     { name = "cadquery", specifier = "==2.8.0" },
     { name = "cadquery-ocp", specifier = "==7.9.3.1" },
     { name = "gmsh", specifier = "==4.15.2" },
@@ -194,17 +194,16 @@ figures = [
 
 [[package]]
 name = "cadgmsh"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cadquery-ocp" },
     { name = "gmsh" },
     { name = "meshio" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/8a/2bb8d74812fbaf4c1a927feea1403388116e23b102eba01cb4e49bf35d73/cadgmsh-0.2.0.tar.gz", hash = "sha256:24598c255018067ae2644a2d1b170714841ecf6dd63aca1b84ec47e44f97a66c", size = 9410, upload-time = "2026-07-10T07:08:53.087Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/e9/8958b76fddb3e2433a4c32e5736bb8c6249b91bbae4edcb2d7bf30352091/cadgmsh-0.3.0.tar.gz", hash = "sha256:15c48aa0657126af5dc6ebfb294c0760bd0e2ffd6177d425fa2bb985556e966f", size = 15209, upload-time = "2026-09-16T07:45:35.453Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/73/ebb1ad56439eaae7383d1f24e2071d845f64879122caad21ff8c66c11eaa/cadgmsh-0.2.0-py3-none-any.whl", hash = "sha256:290e52ca35d3f4d2d2a56f463531d8dcc540d36849fac4cdddd4255eac620c24", size = 7726, upload-time = "2026-07-10T07:08:51.875Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/c2/6873d086f330e9cc51717a7bbfa8a372500cfa580b026166682e132f7a23/cadgmsh-0.3.0-py3-none-any.whl", hash = "sha256:425309b485d45a2ea5f915979cf13b0faecc8b45eb7603395b7adc306a633376", size = 8136, upload-time = "2026-09-16T07:45:34.367Z" },
 ]
 
 [[package]]
