@@ -692,7 +692,8 @@ point at all.
 
 The step from $N_{i,0}$ and $N_{i,1}$, both given explicitly earlier, to
 the cubic basis functions this chapter has been plotting and using ever
-since is one formula, applied repeatedly:
+since is one formula {cite:p}`cox1972numerical,deboor1972calculating`,
+applied repeatedly:
 
 $$N_{i,k}(u) = \frac{u - t_i}{t_{i+k-1} - t_i}\, N_{i,k-1}(u) \;+\; \frac{t_{i+k} - u}{t_{i+k} - t_{i+1}}\, N_{i+1,k-1}(u).$$
 
@@ -702,7 +703,8 @@ interval each half spans – a direct generalization of the $N_{i,1}$
 hat, which is exactly this blend applied to two order-$0$ steps. Every
 property this chapter has used – the local support confined to $k$
 spans, the automatic $C^{k-2}$ continuity, the knot-multiplicity table –
-follows from this recursion, but reproducing that derivation adds
+follows from this recursion {cite:p}`piegl1997nurbs`, but reproducing
+that derivation adds
 machinery without adding a usable fact: this book's basis-function
 figures, and every claim resting on them, were computed with exactly
 this formula, applied by code rather than by hand.
@@ -731,7 +733,8 @@ control points allow; it cannot equal one.
 
 **Rational** curves escape this by dividing one polynomial by another
 rather than insisting on a single one. A **NURBS** curve – Non-Uniform
-Rational B-Spline – attaches a **weight** $h_i > 0$ to each control
+Rational B-Spline {cite:p}`piegl1997nurbs` – attaches a **weight** $h_i
+> 0$ to each control
 point:
 
 $$\mathbf{C}(u) = \frac{\sum_{i=0}^{n} h_i\, \mathbf{P}_i\, N_{i,k}(u)}{\sum_{i=0}^{n} h_i\, N_{i,k}(u)}.$$

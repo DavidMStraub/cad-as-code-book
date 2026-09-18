@@ -103,7 +103,8 @@ The sketch itself suggests a natural first answer. The enclosure was built
 from simple shapes combined by additions and subtractions – so why not store
 exactly that? A model would then be a tree: primitive solids such as boxes,
 cylinders, and spheres at the leaves, boolean operations at the branches.
-This scheme exists, has a name – **constructive solid geometry**, CSG –
+This scheme exists, has a name – **constructive solid geometry**, CSG
+{cite:p}`requicha1980representations` –
 and is thoroughly intuitive: it is easy to assume that CAD systems store
 models in just this way. The first generation of code-based CAD tools did
 represent models exactly so.
@@ -121,7 +122,8 @@ Professional CAD therefore represents the result directly: the *boundary*
 of the solid – a set of faces, joined at edges, which meet at vertices,
 where every face carries an exact mathematical surface (a plane, a
 cylinder, a free-form patch) and every edge an exact curve. This is the
-**boundary representation**, B-Rep. It has the expressiveness CSG lacks, its
+**boundary representation**, B-Rep
+{cite:p}`requicha1980representations`. It has the expressiveness CSG lacks, its
 faces and edges are there to be referred to, and it is exact: a bore is a
 cylindrical face with a radius, not a bundle of facets that approximates
 one. CAD systems work on boundary representations internally, and
@@ -181,25 +183,30 @@ In the early 1990s, Matra Datavision, a French CAD company, developed a
 full boundary-representation kernel as the foundation for its next
 generation of products. The business did not survive the decade; the kernel
 did. In 1999 it was released as open source under the name **Open CASCADE
-Technology**, OCCT, and it has been developed continuously ever since – since
+Technology**, OCCT {cite:p}`occt`, and it has been developed
+continuously ever since – since
 2013 under the LGPL. The consequence is easy to understate: the hardest
 part of a professional CAD system, the exact geometric core, has now been
 openly available for a quarter of a century.
 
-Software grew on it in several directions. **FreeCAD**, first released in
+Software grew on it in several directions. **FreeCAD**
+{cite:p}`freecad`, first released in
 2002, wrapped the kernel in an open-source parametric CAD application in the
-familiar graphical style and made it scriptable from Python. OpenSCAD,
+familiar graphical style and made it scriptable from Python. OpenSCAD
+{cite:p}`openscad`,
 first released in 2010 and carried by the 3D-printing wave, put a different
 idea in front of a wide audience: the model *is* the script. Its geometry
 was CSG and its output was meshes – the limits of the previous section in
 working form – but it showed a generation of makers that parts can be text,
 with much of what §1.1 describes: parameters, sharing, version control.
 
-**CadQuery**, whose first releases appeared in 2013, joined the two
+**CadQuery** {cite:p}`cadquery`, whose first releases appeared in 2013,
+joined the two
 threads: parametric models as Python programs on the professional kernel,
 with exact exchange formats rather than meshes alone as a first-class goal.
 It now addresses the kernel through **OCP**, a set of thin Python bindings
-to OCCT maintained as part of the CadQuery project. **build123d**, first
+to OCCT maintained as part of the CadQuery project. **build123d**
+{cite:p}`build123d`, first
 released in 2023, wraps the same bindings in an independent framework,
 derived in part from CadQuery but organized around different API choices.
 These two are today's main options for Python code-first CAD: a shared

@@ -267,7 +267,8 @@ exporters.export(brick, "brick.step")
 
 The file this produces holds the same exact boundary representation the
 model computed – faces, edges, curved surfaces – not an approximation of
-it. **STEP** is the name of that format, and it opens in essentially any CAD
+it. **STEP** {cite:p}`iso10303-21` is the name of that format, and it
+opens in essentially any CAD
 system in use today. Chapter 1 argued that code can produce ordinary CAD
 artifacts, not just private scripts; this export is the first concrete proof
 of that claim. Chapter 9 returns to STEP in depth, including how to carry

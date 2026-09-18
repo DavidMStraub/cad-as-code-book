@@ -88,7 +88,8 @@ setting inside the solver itself.
 
 Several open-source libraries assemble and solve $K \mathbf{u} =
 \mathbf{f}$ for a mesh – FEniCS is the best known, built for large,
-custom, research-grade problems. This book uses scikit-fem instead,
+custom, research-grade problems. This book uses scikit-fem
+{cite:p}`gustafsson2020scikitfem` instead,
 because a handful of lines are enough to install it, build a basis on
 a mesh, and assemble a standard operator like `linear_elasticity` or
 `laplace` – exactly the scale of problem this chapter works through.

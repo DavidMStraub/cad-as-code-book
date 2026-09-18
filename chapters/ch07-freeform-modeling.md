@@ -181,7 +181,8 @@ chapter's Sweep section already did with `positionAt` and
 `tangentAt` – a wing is those two pieces composed, not a new technique.
 
 A wing section, or **airfoil**, is not an arbitrary curve. The
-**NACA four-digit** family, published by the National Advisory
+**NACA four-digit** family {cite:p}`jacobs1933characteristics`,
+published by the National Advisory
 Committee for Aeronautics in the 1930s and still in everyday use,
 defines one from three digits alone: maximum camber, its position
 along the **chord** – the straight line from the leading edge to the

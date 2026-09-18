@@ -5,6 +5,8 @@ project:
   authors:
     - name: David M. Straub
   doi: 10.60948/OPUS-1358
+  bibliography:
+    - references.bib
   exports:
     - format: typst
       template: ./template
@@ -18,6 +20,7 @@ project:
         year: "2026"
         publisher: HM Munich University of Applied Sciences
         urn: "urn:nbn:de:bvb:m347-opus-13585"
+        bibliography_file: references.bib
   toc:
     - file: chapters/index.md
     - file: chapters/preface.md

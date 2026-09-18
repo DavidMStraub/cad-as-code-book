@@ -336,3 +336,9 @@
 #counter(page).update(1)
 
 [-CONTENT-]
+
+[# if doc.bibtex #]
+#pagebreak(weak: true)
+#heading(level: 1, numbering: none, outlined: true)[References]
+#bibliography("[# if options.bibliography_file #][-options.bibliography_file-][# else #][-doc.bibtex-][# endif #]", title: none, style: "[-options.bibliography_style-]")
+[# endif #]

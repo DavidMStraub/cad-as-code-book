@@ -149,14 +149,16 @@ def evaluate(body: float, t_ballast: float) -> tuple[float, float, float]:
 is the area-weighted average of the face centroids – honest for a
 shell of uniform thickness – and the ballast and payload enter as
 masses at known heights. Then `brentq`, a classic bracketing
-**root-finder**, finds the equilibrium: `net_lift` is positive when
+**root-finder** {cite:p}`brent1973algorithms`, finds the equilibrium:
+`net_lift` is positive when
 the buoy displaces more than its weight and negative when it
 displaces less, and the draft where it crosses zero is where the buoy
 actually floats. A candidate heavier than the displacement of its
 entire hull never floats at all, and `evaluate` refuses it with an
 exception rather than returning numbers that mean nothing.
 
-`scipy.optimize` expects one fixed calling convention regardless of
+`scipy.optimize` {cite:p}`virtanen2020scipy` expects one fixed calling
+convention regardless of
 which algorithm ends up using it: a function taking a single NumPy
 array and returning a single scalar, never raising. Turning
 `evaluate`'s two margins into something that convention can search
@@ -226,7 +228,8 @@ a derivative exists and means something at every point;
 each other, which is exactly what a CAD objective can actually
 promise.
 
-**Nelder-Mead** keeps a small **simplex** of trial points – three
+**Nelder-Mead** {cite:p}`nelder1965simplex` keeps a small **simplex** of
+trial points – three
 points for this two-variable problem, one more than the number of
 design variables – and repeatedly replaces the worst of them: reflect
 it through the center of the others, and if that reflected point is
@@ -263,7 +266,8 @@ that gives it nothing to compare – and for this buoy, sinking
 candidates cover most of the bounded search space a designer would
 reasonably write down.
 
-**Differential evolution** trades that risk for cost. Instead of one
+**Differential evolution** {cite:p}`storn1997differential` trades that
+risk for cost. Instead of one
 simplex, it keeps an entire *population* of candidate points
 scattered across the whole bounded search space from the start; each
 generation, it builds new candidates by combining existing ones –

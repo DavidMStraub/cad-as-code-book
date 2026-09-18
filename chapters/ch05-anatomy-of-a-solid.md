@@ -339,7 +339,8 @@ everything after it, and that position now belongs to some straight
 edge nowhere near the original hole. No error, no warning – a later step
 built on `hole_rim`, a fillet say, would silently act on the wrong edge.
 
-This is the **topological naming problem**, and it is not specific to
+This is the **topological naming problem**
+{cite:p}`kripac1997mechanism`, and it is not specific to
 any one kernel or library. Internally, a B-Rep kernel assigns each
 edge, face, and vertex a working identity for the shape it just built –
 there is no permanent registry carrying "this is the same edge as

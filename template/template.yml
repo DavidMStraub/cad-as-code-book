@@ -98,6 +98,19 @@ options:
     type: string
     default: ""
     description: URN (e.g. urn:isbn:...)
+  - id: bibliography_file
+    type: file
+    description: >
+      BibTeX file Typst reads directly for the References section. MyST
+      regenerates its own copy of the project bibliography and drops
+      brace-protected casing ({scikit-fem}, {de Boor}) in the process;
+      pointing Typst at the original keeps it.
+  - id: bibliography_style
+    type: string
+    default: ieee
+    description: >
+      Typst citation style for the References section (e.g.
+      chicago-author-date, apa, ieee)
   - id: book_license
     type: string
     default: >

@@ -116,12 +116,14 @@ uniform, interior-filling job STL was never meant for.
 
 ## Building the Mesh with Gmsh
 
-**Gmsh** is the standard open-source tool for building the kind of mesh
+**Gmsh** {cite:p}`geuzaine2009gmsh` is the standard open-source tool for
+building the kind of mesh
 a solver needs: triangles or tetrahedra of a controlled size, filling a
 face or a volume rather than only describing its boundary, and it can
 mesh a shape in either two or three dimensions from the same geometry.
-**cadgmsh** is a thin wrapper that hands a CadQuery shape to Gmsh
-directly and returns a `meshio.Mesh` object in Python.
+**cadgmsh** {cite:p}`cadgmsh` is a thin wrapper that hands a CadQuery
+shape to Gmsh
+directly and returns a `meshio.Mesh` object {cite:p}`meshio` in Python.
 
 ```python
 plate = cf.box(60, 40, 6)
@@ -153,7 +155,8 @@ solver's own equations act on a volume rather than a surface.
 – the same fidelity-against-cost tradeoff `tolerance` was for STL,
 except now the cost is solver time, not file size, and the reader
 controls it directly rather than approximating it through a deflection
-bound. **PyVista** reads the resulting mesh and renders it with its
+bound. **PyVista** {cite:p}`sullivan2019pyvista` reads the resulting
+mesh and renders it with its
 element edges visible, whichever kind of mesh it is – the figure above
 came from exactly this call, `plot(show_edges=True)` on each side.
 
