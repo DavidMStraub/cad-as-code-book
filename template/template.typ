@@ -300,6 +300,9 @@
   [# if options.edition #]
   [-options.edition-] edition \
   [# endif #]
+  [# if options.version #]
+  Version [-options.version-][# if options.revision_date #] ([-options.revision_date-])[# endif #] \
+  [# endif #]
   [# if options.isbn #]
   ISBN [-options.isbn-] \
   [# endif #]

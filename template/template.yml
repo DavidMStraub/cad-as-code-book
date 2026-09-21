@@ -82,6 +82,14 @@ options:
     type: string
     default: ""
     description: Edition label (e.g. "First Edition", "Draft")
+  - id: version
+    type: string
+    default: ""
+    description: Version tag (e.g. "v0.1.0")
+  - id: revision_date
+    type: string
+    default: ""
+    description: Human-readable revision date shown next to the version tag
   - id: year
     type: string
     default: ""
